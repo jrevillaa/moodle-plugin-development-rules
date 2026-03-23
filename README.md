@@ -14,6 +14,7 @@ A structured repository for creating and maintaining Moodle plugin development r
 - `test-cases.json` - Test cases for LLM evaluation
 - `SKILL.md` - Lean skill entrypoint used by the skill runtime
 - `references/` - Supporting reference guides used by the skill
+  - Includes audit workflow and quick triage guidance
 - `agents/openai.yaml` - UI metadata for skill catalogs
 - `assets/` - Skill icons and visual assets
 

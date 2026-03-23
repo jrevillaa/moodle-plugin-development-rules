@@ -152,6 +152,10 @@ When the task involves accessibility, internationalization details, strings in J
 
 When the task involves test coverage, fixtures, generators, PHPUnit, Behat, or regression-proofing, read [testing-and-quality.md](./references/testing-and-quality.md).
 
+Use [plugin-review-workflow.md](./references/plugin-review-workflow.md) when doing a full plugin audit.
+
+Use [quick-triage.md](./references/quick-triage.md) when classifying findings rapidly during review.
+
 Use [review-checklist.md](./references/review-checklist.md) when auditing code or preparing a PR review.
 
 Use [findings-examples.md](./references/findings-examples.md) to keep audit wording sharp, concrete, and consistent.
@@ -226,5 +230,7 @@ Prefer concrete remediation guidance such as:
 - [privacy-files-and-backup.md](./references/privacy-files-and-backup.md): Privacy API, file API, draft areas, and backup/restore concerns.
 - [accessibility-and-i18n.md](./references/accessibility-and-i18n.md): Accessibility and internationalization rules for Moodle UI.
 - [testing-and-quality.md](./references/testing-and-quality.md): PHPUnit, Behat, generators, fixtures, and regression rules.
+- [plugin-review-workflow.md](./references/plugin-review-workflow.md): Step-by-step audit workflow for Moodle plugins.
+- [quick-triage.md](./references/quick-triage.md): Fast criticity guidance for audit findings.
 - [findings-examples.md](./references/findings-examples.md): Example audit findings written in the expected style.
 - [review-checklist.md](./references/review-checklist.md): Fast audit checklist for PR review or code generation validation.
