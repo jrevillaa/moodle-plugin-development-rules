@@ -40,6 +40,30 @@ A structured repository for creating and maintaining Moodle plugin development r
    pnpm extract-tests
    ```
 
+## Install the Skill
+
+Install the repository as a skill source:
+
+```bash
+npx skills add https://github.com/jrevillaa/moodle-plugin-development-rules
+```
+
+If your setup supports selecting a specific skill by name:
+
+```bash
+npx skills add https://github.com/jrevillaa/moodle-plugin-development-rules --skill moodle-plugin-development-rules
+```
+
+## Usage Examples
+
+Use prompts like:
+
+- `Use $moodle-plugin-development-rules to audit this Moodle local plugin and classify findings as Critical, Major, or Minor.`
+- `Use $moodle-plugin-development-rules to refactor this report page to use pagination, filters, and the right DB API.`
+- `Use $moodle-plugin-development-rules to review whether this plugin is using Form API, Mustache, AMD, and capability checks correctly.`
+- `Use $moodle-plugin-development-rules to modernize this legacy Moodle plugin without breaking supported versions.`
+- `Use $moodle-plugin-development-rules to review this external API implementation and move it to classes/external if appropriate.`
+
 ## Creating a New Rule
 
 1. Copy `rules/_template.md` to `rules/area-description.md`
@@ -135,3 +159,16 @@ When adding or modifying rules:
 ## Notes
 
 `SKILL.md` stays intentionally lean so the skill remains efficient at runtime. The broader editorial and generated artifacts live in `rules/`, `AGENTS.md`, and `test-cases.json`.
+
+## Publishing Checklist
+
+- Keep `SKILL.md` concise and operational
+- Keep `README.md` clear for humans discovering the repo
+- Run `pnpm validate`
+- Run `pnpm build`
+- Run `pnpm extract-tests`
+- Confirm `AGENTS.md` and `test-cases.json` are regenerated
+- Confirm icons render and `agents/openai.yaml` points to the right assets
+- Test install flow with `npx skills add ...`
+- Add a release note or post with 2-3 concrete usage examples
+- Keep adding high-signal rules over time so the repo looks actively maintained
