@@ -11,6 +11,32 @@ Apply Moodle-native implementation patterns before writing or reviewing code. Pr
 
 Start by identifying the subsystem being touched: page output, forms, JavaScript, navigation, access, data, strings, or rendering. Then choose the closest Moodle abstraction and implement through it instead of assembling raw output manually.
 
+## When To Apply
+
+Reference this skill when:
+
+- Writing or refactoring Moodle plugin PHP code
+- Reviewing a Moodle plugin for architecture, security, or scalability issues
+- Implementing forms, page output, templates, renderers, or JS behavior
+- Building reports, admin tools, exports, or data-heavy screens
+- Creating or modernizing web services, hooks, tasks, observers, or settings
+- Migrating legacy Moodle plugin code to current Moodle-native patterns
+
+## Rule Categories By Priority
+
+| Priority | Category | Impact | Prefix |
+| --- | --- | --- | --- |
+| 1 | Capabilities and security | Critical | `security-` |
+| 2 | Version compatibility and upgrades | Critical | `compat-` |
+| 3 | Forms, rendering, and output structure | High | `ui-` |
+| 4 | JavaScript and frontend behavior | High | `amd-` |
+| 5 | Data access, SQL choice, and scalability | High | `data-` |
+| 6 | Web services and external APIs | Medium-High | `external-` |
+| 7 | Events, tasks, cache, and async work | Medium | `async-` |
+| 8 | Privacy, files, and backup/restore | Medium | `lifecycle-` |
+| 9 | Naming, helpers, and plugin structure | Medium | `arch-` |
+| 10 | Accessibility, i18n, and testing | Medium | `quality-` |
+
 ## Core Workflow
 
 1. Inspect the plugin type and nearby conventions before changing code.
@@ -18,6 +44,22 @@ Start by identifying the subsystem being touched: page output, forms, JavaScript
 3. Reject framework-level anti-patterns even if they are faster to type.
 4. Keep presentation out of business logic whenever Moodle provides a rendering layer.
 5. Follow existing Moodle naming, file placement, and page setup conventions in the target plugin.
+
+## Operating Modes
+
+Choose the mode that best matches the user's request.
+
+### Audit Mode
+
+Use when the user asks to review, audit, validate, inspect, assess, or harden an existing plugin. Start with the Initial Validation pass and report findings by criticity.
+
+### Fix Mode
+
+Use when the user asks to implement or refactor changes. Still run a lightweight validation first, then apply Moodle-native fixes in priority order.
+
+### Migration Mode
+
+Use when the user wants to modernize legacy Moodle code. Prioritize replacing raw HTML output, direct JavaScript loading, weak access checks, legacy external API placement, and non-scalable list handling.
 
 ## Initial Validation
 
@@ -36,6 +78,8 @@ Validate whether the plugin already follows the rules in this skill across:
 - External APIs, privacy, files, backup/restore, cache, and tests
 
 If the plugin violates any rule, report the issue, explain the Moodle-native replacement, and classify the recommendation by criticity.
+
+Validate both correctness and maintainability. A plugin may work and still fail this skill if it ignores Moodle-native architecture, scalability, accessibility, or security expectations.
 
 ## Criticity Levels
 
@@ -80,6 +124,12 @@ Typical examples:
 
 When the task involves plugin architecture, hooks, callbacks, file layout, naming, constants, classes, or helper boundaries, read [architecture-and-naming.md](./references/architecture-and-naming.md).
 
+When the task involves plugin-specific conventions for `local`, `mod`, `block`, `report`, `theme`, `auth`, `enrol`, or similar plugin types, read [plugin-type-guidance.md](./references/plugin-type-guidance.md).
+
+When the task involves modernizing legacy code or replacing older Moodle patterns with current ones, read [migration-patterns.md](./references/migration-patterns.md).
+
+When the task involves spotting common mistakes quickly or showing "wrong vs preferred" implementation guidance, read [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md).
+
 When the task involves settings pages, plugin config, navigation, URLs, icons, or safe output composition, read [navigation-settings-and-output.md](./references/navigation-settings-and-output.md).
 
 When the task involves capabilities, access checks, user data, CSRF, context, or secure page handling, read [capabilities-and-security.md](./references/capabilities-and-security.md).
@@ -98,9 +148,13 @@ When the task involves events, observers, hooks, adhoc tasks, scheduled tasks, c
 
 When the task involves privacy, personal data, file handling, draft areas, backup/restore, or data lifecycle concerns, read [privacy-files-and-backup.md](./references/privacy-files-and-backup.md).
 
+When the task involves accessibility, internationalization details, strings in JS, placeholders, or user-facing text quality, read [accessibility-and-i18n.md](./references/accessibility-and-i18n.md).
+
 When the task involves test coverage, fixtures, generators, PHPUnit, Behat, or regression-proofing, read [testing-and-quality.md](./references/testing-and-quality.md).
 
 Use [review-checklist.md](./references/review-checklist.md) when auditing code or preparing a PR review.
+
+Use [findings-examples.md](./references/findings-examples.md) to keep audit wording sharp, concrete, and consistent.
 
 ## Non-Negotiable Rules
 
@@ -140,6 +194,8 @@ For each finding, include:
 
 If no findings are discovered, say so explicitly and mention any residual risks or test gaps.
 
+When useful, show a concise "wrong / preferred" comparison instead of a long abstract explanation.
+
 Prefer concrete remediation guidance such as:
 
 - "Move this callback or integration point to the proper hook or Moodle callback location."
@@ -157,6 +213,9 @@ Prefer concrete remediation guidance such as:
 ## References
 
 - [architecture-and-naming.md](./references/architecture-and-naming.md): Hooks, callbacks, folder layout, naming, constants, helpers, and code organization.
+- [plugin-type-guidance.md](./references/plugin-type-guidance.md): Practical guidance by Moodle plugin type.
+- [migration-patterns.md](./references/migration-patterns.md): Legacy-to-modern Moodle refactor patterns.
+- [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md): Common mistakes with "wrong vs preferred" examples.
 - [navigation-settings-and-output.md](./references/navigation-settings-and-output.md): Admin settings, URLs, navigation, icons, escaping, and page output rules.
 - [capabilities-and-security.md](./references/capabilities-and-security.md): Context resolution, capabilities, login checks, security boundaries, and safe request handling.
 - [frontend-and-js.md](./references/frontend-and-js.md): AMD rules, browser-side behavior, page requirements, and JS review guidance.
@@ -165,5 +224,7 @@ Prefer concrete remediation guidance such as:
 - [webservices-and-external-api.md](./references/webservices-and-external-api.md): External functions, service structure, validation, and return contracts.
 - [events-tasks-and-cache.md](./references/events-tasks-and-cache.md): Events, observers, tasks, hooks, and caching rules.
 - [privacy-files-and-backup.md](./references/privacy-files-and-backup.md): Privacy API, file API, draft areas, and backup/restore concerns.
+- [accessibility-and-i18n.md](./references/accessibility-and-i18n.md): Accessibility and internationalization rules for Moodle UI.
 - [testing-and-quality.md](./references/testing-and-quality.md): PHPUnit, Behat, generators, fixtures, and regression rules.
+- [findings-examples.md](./references/findings-examples.md): Example audit findings written in the expected style.
 - [review-checklist.md](./references/review-checklist.md): Fast audit checklist for PR review or code generation validation.

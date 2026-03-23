@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Moodle plugin development rules">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#F98012"/>
+      <stop offset="100%" stop-color="#D65B00"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="url(#bg)"/>
+  <circle cx="392" cy="124" r="56" fill="#2D2A26" opacity="0.12"/>
+  <path d="M116 372V140h54l86 102 86-102h54v232h-54V235l-86 99-86-99v137h-54z" fill="#fff"/>
+  <path d="M342 132l36 36-104 104-37 10 10-38 95-112z" fill="#2D2A26"/>
+</svg>

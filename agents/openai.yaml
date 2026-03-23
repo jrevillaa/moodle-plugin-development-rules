@@ -1,4 +1,7 @@
 interface:
   display_name: "Moodle Plugin Dev Rules"
   short_description: "Audit and build Moodle plugins the right way"
+  icon_small: "./assets/moodle-plugin-rules-small.svg"
+  icon_large: "./assets/moodle-plugin-rules-large.svg"
+  brand_color: "#F98012"
   default_prompt: "Use $moodle-plugin-development-rules to audit this Moodle plugin first, classify findings as Critical, Major, or Minor, and then implement the Moodle-native fixes."

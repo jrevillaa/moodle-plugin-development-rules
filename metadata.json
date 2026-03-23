@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0",
+  "organization": "Independent",
+  "date": "March 2026",
+  "abstract": "Comprehensive Moodle plugin development guide for AI agents and reviewers. Covers architecture, capabilities, forms, renderers, AMD JavaScript, DB API usage, performance, upgrades, external APIs, privacy, accessibility, and testing. Findings are prioritized for audit workflows and aligned with Moodle-native implementation patterns.",
+  "references": [
+    "https://moodledev.io",
+    "https://moodledev.io/docs/apis/core/dml",
+    "https://moodledev.io/docs/apis/subsystems/form",
+    "https://moodledev.io/docs/guides/templates",
+    "https://moodledev.io/docs/guides/javascript/modules",
+    "https://moodledev.io/docs/apis/subsystems/access",
+    "https://moodledev.io/docs/apis/subsystems/external",
+    "https://moodledev.io/docs/apis/subsystems/privacy"
+  ]
+}

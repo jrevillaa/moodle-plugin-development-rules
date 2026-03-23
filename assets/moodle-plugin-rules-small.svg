@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Moodle plugin rules icon">
+  <rect width="128" height="128" rx="24" fill="#F98012"/>
+  <path d="M30 92V36h14l20 24 20-24h14v56H84V59L64 82 44 59v33H30z" fill="#fff"/>
+  <path d="M92 28l8 8-26 26-8 2 2-8 24-28z" fill="#2D2A26"/>
+</svg>
