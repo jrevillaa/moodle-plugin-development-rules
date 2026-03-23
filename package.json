@@ -1,0 +1,12 @@
+{
+  "name": "moodle-plugin-development-rules",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Structured Moodle plugin development rules for agents and LLMs",
+  "scripts": {
+    "build": "node src/build.mjs",
+    "validate": "node src/validate.mjs",
+    "extract-tests": "node src/extract-tests.mjs",
+    "dev": "pnpm build && pnpm validate"
+  }
+}

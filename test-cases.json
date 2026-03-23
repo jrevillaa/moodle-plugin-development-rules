@@ -1,0 +1,114 @@
+[
+  {
+    "id": "amd-module-loading",
+    "title": "Implement Browser Logic as AMD Modules",
+    "impact": "HIGH",
+    "input": "$PAGE->requires->js('/local/example/js/main.js');",
+    "expected_shape": "$PAGE->requires->js_call_amd('local_example/main', 'init', [$itemid]);"
+  },
+  {
+    "id": "arch-helper-boundaries",
+    "title": "Keep Helpers Cohesive and Domain-Specific",
+    "impact": "MEDIUM",
+    "input": "class helper {\n    public static function get_items() {}\n    public static function can_edit() {}\n    public static function render_table() {}\n}",
+    "expected_shape": "class item_query_helper {\n    public static function get_filtered_items(array $filters): array {\n        // Query-focused responsibility.\n    }\n}"
+  },
+  {
+    "id": "async-scheduled-task",
+    "title": "Move Recurrent Heavy Work to Scheduled Tasks",
+    "impact": "MEDIUM",
+    "input": "// Runs every time the page loads.\nlocal_example_sync_all_records();",
+    "expected_shape": "namespace local_example\\task;\n\nclass sync_records extends \\core\\task\\scheduled_task {\n    public function get_name() {\n        return get_string('tasksyncrecords', 'local_example');\n    }\n\n    public function execute() {\n        local_example_sync_all_records();\n    }\n}"
+  },
+  {
+    "id": "compat-upgrade-path",
+    "title": "Route Persistent Changes Through Moodle Upgrades",
+    "impact": "CRITICAL",
+    "input": "if (!$DB->get_manager()->field_exists($table, $field)) {\n    $DB->get_manager()->add_field($table, $field);\n}",
+    "expected_shape": "function xmldb_local_example_upgrade($oldversion) {\n    global $DB;\n\n    $dbman = $DB->get_manager();\n\n    if ($oldversion < 2026032300) {\n        $table = new xmldb_table('local_example_items');\n        $field = new xmldb_field('status', XMLDB_TYPE_CHAR, '20', null, null, null, 'draft');\n\n        if (!$dbman->field_exists($table, $field)) {\n            $dbman->add_field($table, $field);\n        }\n\n        upgrade_plugin_savepoint(true, 2026032300, 'local', 'example');\n    }\n\n    return true;\n}"
+  },
+  {
+    "id": "data-db-api-choice",
+    "title": "Choose the Moodle DB API Based on Query Shape",
+    "impact": "HIGH",
+    "input": "$records = $DB->get_records('user', null, 'lastname ASC');",
+    "expected_shape": "$records = $DB->get_records('user', ['deleted' => 0], 'lastname ASC', 'id, firstname, lastname');"
+  },
+  {
+    "id": "data-paginated-tables",
+    "title": "Assume Report Tables Will Grow",
+    "impact": "HIGH",
+    "input": "$records = $DB->get_records('local_example_log');\nforeach ($records as $record) {\n    echo html_writer::div(s($record->message));\n}",
+    "expected_shape": "$perpage = 25;\n$page = optional_param('page', 0, PARAM_INT);\n$offset = $page * $perpage;\n\n$records = $DB->get_records_sql(\n    \"SELECT id, message, timecreated\n       FROM {local_example_log}\n   ORDER BY timecreated DESC\",\n    [],\n    $offset,\n    $perpage\n);"
+  },
+  {
+    "id": "external-class-based-api",
+    "title": "Prefer classes/external for New External APIs",
+    "impact": "MEDIUM-HIGH",
+    "input": "function local_example_get_items() {\n    global $DB;\n    return $DB->get_records('local_example_items');\n}",
+    "expected_shape": "namespace local_example\\external;\n\nclass get_items extends \\external_api {\n    public static function execute() {\n        global $DB;\n        return $DB->get_records('local_example_items');\n    }\n}"
+  },
+  {
+    "id": "lifecycle-file-api",
+    "title": "Use Moodle File API for Managed Files",
+    "impact": "MEDIUM",
+    "input": "move_uploaded_file($_FILES['attachment']['tmp_name'], '/tmp/example.txt');",
+    "expected_shape": "$draftitemid = file_get_submitted_draft_itemid('attachment');\nfile_save_draft_area_files(\n    $draftitemid,\n    $context->id,\n    'local_example',\n    'attachment',\n    $itemid,\n    ['subdirs' => 0]\n);"
+  },
+  {
+    "id": "lifecycle-privacy-review",
+    "title": "Review Privacy API Obligations for User Data",
+    "impact": "MEDIUM",
+    "input": "$record = (object)[\n    'userid' => $USER->id,\n    'notes' => $notes,\n];\n$DB->insert_record('local_example_notes', $record);",
+    "expected_shape": "// Store the data intentionally and review whether the plugin needs\n// privacy metadata, export, or deletion support for these records.\n$record = (object)[\n    'userid' => $USER->id,\n    'notes' => $notes,\n];\n$DB->insert_record('local_example_notes', $record);"
+  },
+  {
+    "id": "quality-accessible-labels",
+    "title": "Use Clear Labels and Accessible Actions",
+    "impact": "MEDIUM",
+    "input": "echo '<a href=\"' . $url . '\"><i class=\"icon fa fa-edit\"></i></a>';",
+    "expected_shape": "echo $OUTPUT->action_icon(\n    $url,\n    new pix_icon('t/edit', get_string('edit'))\n);"
+  },
+  {
+    "id": "quality-get-string",
+    "title": "Move User-Facing Text to Language Strings",
+    "impact": "MEDIUM",
+    "input": "$PAGE->set_title('Manage items');\necho html_writer::tag('button', 'Save');",
+    "expected_shape": "$PAGE->set_title(get_string('manageitems', 'local_example'));\necho html_writer::tag('button', get_string('savechanges'));"
+  },
+  {
+    "id": "quality-testing-coverage",
+    "title": "Add Automated Coverage for Non-Trivial Behavior",
+    "impact": "MEDIUM",
+    "input": "// Complex feature added with no automated tests.",
+    "expected_shape": "// Add PHPUnit coverage for domain logic and Behat coverage when the\n// workflow spans UI, permissions, or rendered behavior."
+  },
+  {
+    "id": "security-capability-checks",
+    "title": "Resolve Context and Enforce Capabilities Early",
+    "impact": "CRITICAL",
+    "input": "$id = required_param('id', PARAM_INT);\n$record = $DB->get_record('local_example_items', ['id' => $id], '*', MUST_EXIST);\n\nif (optional_param('delete', 0, PARAM_BOOL)) {\n    $DB->delete_records('local_example_items', ['id' => $id]);\n}",
+    "expected_shape": "$id = required_param('id', PARAM_INT);\n$record = $DB->get_record('local_example_items', ['id' => $id], '*', MUST_EXIST);\n$context = context_system::instance();\n\nrequire_login();\nrequire_capability('local/example:manage', $context);\n\nif (optional_param('delete', 0, PARAM_BOOL)) {\n    require_sesskey();\n    $DB->delete_records('local_example_items', ['id' => $id]);\n}"
+  },
+  {
+    "id": "ui-form-api",
+    "title": "Use Form API for Real Input Workflows",
+    "impact": "HIGH",
+    "input": "echo '<form method=\"post\">';\necho '<input type=\"text\" name=\"name\" />';\necho '<button type=\"submit\">Save</button>';\necho '</form>';",
+    "expected_shape": "class item_form extends moodleform {\n    public function definition() {\n        $mform = $this->_form;\n        $mform->addElement('text', 'name', get_string('name', 'local_example'));\n        $mform->setType('name', PARAM_TEXT);\n        $this->add_action_buttons();\n    }\n}"
+  },
+  {
+    "id": "ui-moodle-url-output",
+    "title": "Use Moodle URLs and Output Helpers",
+    "impact": "MEDIUM",
+    "input": "$url = '/local/example/view.php?id=' . $id;\necho '<a href=\"' . $url . '\">Open</a>';",
+    "expected_shape": "$url = new moodle_url('/local/example/view.php', ['id' => $id]);\necho html_writer::link($url, get_string('open', 'local_example'));"
+  },
+  {
+    "id": "ui-mustache-renderers",
+    "title": "Render Non-Trivial Views Through Mustache and Renderers",
+    "impact": "HIGH",
+    "input": "echo '<div class=\"card\">';\necho '<h3>' . format_string($item->name) . '</h3>';\necho '<p>' . s($item->description) . '</p>';\necho '</div>';",
+    "expected_shape": "$data = [\n    'name' => format_string($item->name),\n    'description' => format_text($item->description, FORMAT_HTML),\n];\n\necho $OUTPUT->render_from_template('local_example/item_card', $data);"
+  }
+]
