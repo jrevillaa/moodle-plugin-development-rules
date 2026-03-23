@@ -1,0 +1,4 @@
+interface:
+  display_name: "Moodle Plugin Dev Rules"
+  short_description: "Moodle-native plugin implementation rules"
+  default_prompt: "Use $moodle-plugin-development-rules to implement or review this Moodle plugin change with Form API, Mustache/renderers, and AMD patterns."
