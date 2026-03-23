@@ -19,6 +19,63 @@ Start by identifying the subsystem being touched: page output, forms, JavaScript
 4. Keep presentation out of business logic whenever Moodle provides a rendering layer.
 5. Follow existing Moodle naming, file placement, and page setup conventions in the target plugin.
 
+## Initial Validation
+
+When the user asks to review, audit, validate, modernize, or improve a Moodle plugin, start with a compliance pass before proposing implementation details.
+
+Validate whether the plugin already follows the rules in this skill across:
+
+- Architecture and file placement
+- Hooks, callbacks, tasks, and observers
+- Strings and language pack usage
+- Capabilities, context, and request security
+- Form API, renderers, and Mustache
+- AMD JavaScript and browser behavior
+- DB API, SQL choices, pagination, filtering, and exports
+- Version compatibility and upgrade paths
+- External APIs, privacy, files, backup/restore, cache, and tests
+
+If the plugin violates any rule, report the issue, explain the Moodle-native replacement, and classify the recommendation by criticity.
+
+## Criticity Levels
+
+Use exactly these three levels when reporting findings:
+
+### Critical
+
+Use for security, authorization, privacy, data integrity, broken upgrade paths, invalid external API exposure, or patterns likely to fail in production or violate Moodle core expectations materially.
+
+Typical examples:
+
+- Missing capability or context checks
+- Unsafe request handling
+- Invalid file or privacy handling
+- Version-incompatible API usage
+- Schema changes outside upgrade flow
+
+### Major
+
+Use for architectural, performance, maintainability, or framework-compliance problems that are not immediately dangerous but should be fixed before the code is considered solid.
+
+Typical examples:
+
+- Hand-built forms instead of Form API
+- Echoed complex views instead of Mustache and renderers
+- Wrong placement of external API code
+- Large tables without pagination, sorting, or filtering
+- Poor DB API choice for the query shape
+
+### Minor
+
+Use for lower-risk improvements that still increase consistency, readability, reuse, and Moodle alignment.
+
+Typical examples:
+
+- Hardcoded strings that should move to `get_string()`
+- Weak variable or function naming
+- Missing helper extraction for repeated domain logic
+- Missing low-risk test coverage additions
+
 ## Decision Rules
 
 When the task involves plugin architecture, hooks, callbacks, file layout, naming, constants, classes, or helper boundaries, read [architecture-and-naming.md](./references/architecture-and-naming.md).
@@ -72,6 +129,16 @@ Do not mix data loading, permission logic, and markup generation in one procedur
 When implementing code, explain decisions in Moodle terms: which core API was chosen, why it fits, and which anti-pattern was avoided.
 
 When reviewing code, call out violations explicitly and propose the Moodle-native replacement.
+
+When the request is an audit or validation, present findings grouped by criticity in this order: Critical, Major, Minor.
+
+For each finding, include:
+
+- The rule being violated
+- Why it matters in Moodle terms
+- The recommended Moodle-native remediation
+
+If no findings are discovered, say so explicitly and mention any residual risks or test gaps.
 
 Prefer concrete remediation guidance such as:
 
