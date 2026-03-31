@@ -1,6 +1,6 @@
 # Moodle Plugin Development Rules
 
-**Version 1.0.0**  
+**Version 2.0.0**  
 Independent  
 March 2026
 
@@ -12,7 +12,7 @@ March 2026
 
 ## Abstract
 
-Comprehensive Moodle plugin development guide for AI agents and reviewers. Covers architecture, capabilities, forms, renderers, AMD JavaScript, DB API usage, performance, upgrades, external APIs, privacy, accessibility, and testing. Findings are prioritized for audit workflows and aligned with Moodle-native implementation patterns.
+Comprehensive Moodle plugin development guide for AI agents and reviewers. Covers Moodle-native architecture, capabilities, forms, renderers, Mustache, AMD JavaScript, DB API usage, upgrades, external APIs, transaction-safe write endpoints, PHP compatibility, coding style, Moodle 5 theme work, privacy, accessibility, and scenario-based testing. Findings are prioritized for audit workflows and aligned with Moodle-first implementation patterns.
 
 ---
 
@@ -20,15 +20,20 @@ Comprehensive Moodle plugin development guide for AI agents and reviewers. Cover
 
 - `amd-module-loading.md` - Implement Browser Logic as AMD Modules
 - `arch-helper-boundaries.md` - Keep Helpers Cohesive and Domain-Specific
+- `arch-php-guidance-subordinate-to-moodle.md` - Keep Generic PHP Best Practices Subordinate To Moodle Conventions
 - `async-scheduled-task.md` - Move Recurrent Heavy Work to Scheduled Tasks
+- `compat-php-version-gating.md` - Gate PHP Modernization By Moodle And PHP Support Matrix
 - `compat-upgrade-path.md` - Route Persistent Changes Through Moodle Upgrades
 - `data-db-api-choice.md` - Choose the Moodle DB API Based on Query Shape
 - `data-paginated-tables.md` - Assume Report Tables Will Grow
 - `external-class-based-api.md` - Prefer classes/external for New External APIs
+- `external-contract-and-exposure.md` - Validate External API Contracts And Minimize Service Exposure
+- `external-write-transaction-safety.md` - Protect Multi-Step External Writes With Transaction And Recovery Design
 - `lifecycle-file-api.md` - Use Moodle File API for Managed Files
 - `lifecycle-privacy-review.md` - Review Privacy API Obligations for User Data
 - `quality-accessible-labels.md` - Use Clear Labels and Accessible Actions
 - `quality-get-string.md` - Move User-Facing Text to Language Strings
+- `quality-scenario-based-testing.md` - Test Features Against Expected Success And Failure Scenarios
 - `quality-testing-coverage.md` - Add Automated Coverage for Non-Trivial Behavior
 - `security-capability-checks.md` - Resolve Context and Enforce Capabilities Early
 - `ui-form-api.md` - Use Form API for Real Input Workflows
@@ -119,6 +124,66 @@ Recommended remediation:
 
 Reference: [Moodle Developer Documentation](https://moodledev.io)
 
+### Keep Generic PHP Best Practices Subordinate To Moodle Conventions
+
+**Impact:** HIGH (Prevents PSR and SOLID advice from fighting Moodle-native APIs and structure)
+
+## Keep Generic PHP Best Practices Subordinate To Moodle Conventions
+
+**Impact: HIGH (prevents PSR and SOLID advice from fighting Moodle-native APIs and structure)**
+
+Use PSR, SOLID, and general PHP best practices as supporting heuristics, not as primary architecture rules for Moodle plugins. When generic PHP advice conflicts with Moodle APIs, file layout, globals, callbacks, or subsystem conventions, prefer Moodle.
+
+Wrong:
+
+```php
+class delete_item_service {
+    public function __construct(
+        private request_interface $request,
+        private authorization_interface $authorization,
+        private item_repository_interface $items,
+    ) {}
+
+    public function handle(): void {
+        $id = (int)$this->request->get('id');
+
+        if (!$this->authorization->allows('local/example:manage')) {
+            throw new forbidden_exception();
+        }
+
+        $this->items->delete($id);
+    }
+}
+```
+
+Preferred:
+
+```php
+$id = required_param('id', PARAM_INT);
+$context = context_system::instance();
+
+require_login();
+require_capability('local/example:manage', $context);
+require_sesskey();
+
+$DB->delete_records('local_example_items', ['id' => $id]);
+```
+
+Why it matters:
+
+- Moodle already provides framework-native ways to resolve parameters, context, capabilities, URLs, rendering, forms, files, and persistence
+- Forcing generic service layers or PSR-style abstractions everywhere can hide the real Moodle integration points and make plugins harder to maintain
+- Good PHP design still matters, but it should strengthen Moodle structure instead of replacing it
+
+Recommended remediation:
+
+- Apply SOLID only where it clarifies a real domain responsibility
+- Prefer Moodle APIs over raw PHP or framework-agnostic abstractions when Moodle already solves the problem
+- Follow Moodle file placement, callback shapes, naming, and subsystem structure before importing generic PSR preferences
+- Extract helpers or services only when they reduce real coupling, not just to satisfy abstract design purity
+
+Reference: [Moodle Developer Documentation](https://moodledev.io)
+
 ### Move Recurrent Heavy Work to Scheduled Tasks
 
 **Impact:** MEDIUM (Keeps request-time flows responsive and operationally predictable)
@@ -162,6 +227,65 @@ Recommended remediation:
 
 - Move periodic processing to a scheduled task
 - Keep page requests focused on user interaction
+
+Reference: [Moodle Developer Documentation](https://moodledev.io)
+
+### Gate PHP Modernization By Moodle And PHP Support Matrix
+
+**Impact:** CRITICAL (Prevents incompatible syntax recommendations and unsafe refactors across Moodle branches)
+
+## Gate PHP Modernization By Moodle And PHP Support Matrix
+
+**Impact: CRITICAL (prevents incompatible syntax recommendations and unsafe refactors across Moodle branches)**
+
+Do not suggest or apply modern PHP syntax mechanically in Moodle plugins. Check the target Moodle branch and its supported PHP versions before introducing language features, stricter type contracts, or style-driven refactors.
+
+Wrong:
+
+```php
+enum sync_status: string {
+    case pending = 'pending';
+    case done = 'done';
+}
+
+final class sync_result {
+    public function __construct(
+        public readonly sync_status $status,
+    ) {}
+}
+```
+
+Preferred:
+
+```php
+// First verify the target Moodle branch and supported PHP versions.
+// Then choose the most modern syntax that is actually safe for that branch.
+class sync_result {
+    /** @var string */
+    private $status;
+
+    public function __construct(string $status) {
+        $this->status = $status;
+    }
+
+    public function get_status(): string {
+        return $this->status;
+    }
+}
+```
+
+Why it matters:
+
+- Moodle plugin compatibility is constrained by the supported PHP versions of the target Moodle branch
+- A "cleaner" PHP refactor can still be wrong if the syntax is unavailable in the deployment matrix
+- Tightening types or adopting new syntax without checking callback signatures and subsystem expectations can break stable branches
+
+Recommended remediation:
+
+- Check the plugin's target Moodle branch before proposing PHP modernizations
+- Only suggest features supported by that branch's PHP matrix
+- Prefer the newest safe syntax, not the newest possible syntax
+- Be especially careful with enums, `readonly`, attributes, promoted properties, union types, and newer exception or typing patterns
 
 Reference: [Moodle Developer Documentation](https://moodledev.io)
 
@@ -370,6 +494,161 @@ Recommended remediation:
 
 Reference: [External API](https://moodledev.io/docs/apis/subsystems/external)
 
+### Validate External API Contracts And Minimize Service Exposure
+
+**Impact:** HIGH (Prevents weak web service contracts, missing access validation, and overexposed endpoints)
+
+## Validate External API Contracts And Minimize Service Exposure
+
+**Impact: HIGH (prevents weak web service contracts, missing access validation, and overexposed endpoints)**
+
+External APIs should define explicit input and output contracts, validate parameters and context early, and expose only the minimum necessary surface in `db/services.php`.
+
+Wrong:
+
+```php
+namespace local_example\external;
+
+class enrol_users extends \external_api {
+    public static function execute($courseid, $userid) {
+        global $DB;
+
+        $DB->insert_record('local_example_enrolments', [
+            'courseid' => $courseid,
+            'userid' => $userid,
+        ]);
+
+        return ['ok' => true];
+    }
+}
+```
+
+Preferred:
+
+```php
+namespace local_example\external;
+
+class enrol_users extends \external_api {
+    public static function execute_parameters(): \external_function_parameters {
+        return new \external_function_parameters([
+            'courseid' => new \external_value(PARAM_INT, 'Course id'),
+            'userid' => new \external_value(PARAM_INT, 'User id'),
+        ]);
+    }
+
+    public static function execute(int $courseid, int $userid): array {
+        $params = self::validate_parameters(self::execute_parameters(), [
+            'courseid' => $courseid,
+            'userid' => $userid,
+        ]);
+
+        $context = \context_course::instance($params['courseid']);
+        self::validate_context($context);
+        require_capability('local/example:enrol', $context);
+
+        return ['ok' => true];
+    }
+
+    public static function execute_returns(): \external_single_structure {
+        return new \external_single_structure([
+            'ok' => new \external_value(PARAM_BOOL, 'Whether the enrolment completed'),
+        ]);
+    }
+}
+```
+
+Why it matters:
+
+- External functions are framework contracts, not loose helper methods
+- Missing `validate_parameters()` or `validate_context()` weakens security and input guarantees
+- Weak `execute_returns()` definitions make clients brittle and hard to maintain
+- Broad or careless `db/services.php` exposure increases attack surface and coupling
+
+Recommended remediation:
+
+- Define `execute_parameters()`, `execute()`, and `execute_returns()` explicitly
+- Call `validate_parameters()` before touching domain data
+- Resolve and validate the correct context before capability checks
+- Keep `db/services.php` entries minimal, accurate, and capability-bounded
+- Expose only the endpoints and service bundles that are actually needed
+
+Reference: [External API](https://moodledev.io/docs/apis/subsystems/external)
+
+### Protect Multi-Step External Writes With Transaction And Recovery Design
+
+**Impact:** HIGH (Prevents inconsistent Moodle state when write-oriented external APIs fail mid-operation)
+
+## Protect Multi-Step External Writes With Transaction And Recovery Design
+
+**Impact: HIGH (prevents inconsistent Moodle state when write-oriented external APIs fail mid-operation)**
+
+When an external API performs multiple related writes, do not assume the happy path. Design the endpoint so partial failure does not leave Moodle data in an inconsistent state.
+
+Wrong:
+
+```php
+namespace local_example\external;
+
+class import_enrolments extends \external_api {
+    public static function execute(int $courseid, array $userids): array {
+        global $DB;
+
+        foreach ($userids as $userid) {
+            $DB->insert_record('local_example_queue', [
+                'courseid' => $courseid,
+                'userid' => $userid,
+            ]);
+
+            enrol_try_internal_enrol($courseid, $userid);
+        }
+
+        return ['ok' => true];
+    }
+}
+```
+
+Preferred:
+
+```php
+namespace local_example\external;
+
+class import_enrolments extends \external_api {
+    public static function execute(int $courseid, array $userids): array {
+        global $DB;
+
+        $transaction = $DB->start_delegated_transaction();
+
+        foreach ($userids as $userid) {
+            $DB->insert_record('local_example_queue', [
+                'courseid' => $courseid,
+                'userid' => $userid,
+            ]);
+
+            enrol_try_internal_enrol($courseid, $userid);
+        }
+
+        $transaction->allow_commit();
+
+        return ['ok' => true];
+    }
+}
+```
+
+Why it matters:
+
+- External write endpoints often create or update several related Moodle records in sequence
+- A failure in the middle of the operation can leave partial queue entries, half-created entities, or mismatched state
+- Recovery behavior is part of the contract, especially for enrolment, activity creation, grading, or bulk-import endpoints
+
+Recommended remediation:
+
+- Review whether the endpoint needs a delegated transaction or another explicit recovery strategy
+- Define what should happen on partial failure: rollback, skip-and-report, or resumable recovery
+- Add tests for interrupted processing and partial-write scenarios
+- Keep the write path focused so transaction boundaries are easy to reason about
+
+Reference: [External API](https://moodledev.io/docs/apis/subsystems/external)
+
 ### Use Moodle File API for Managed Files
 
 **Impact:** MEDIUM (Prevents brittle file handling and permission mistakes)
@@ -531,6 +810,51 @@ Recommended remediation:
 
 - Move labels, headings, buttons, and notifications to the language pack
 - Use `get_string()` consistently for user-facing text
+
+Reference: [Moodle Developer Documentation](https://moodledev.io)
+
+### Test Features Against Expected Success And Failure Scenarios
+
+**Impact:** HIGH (Prevents under-tested workflows by covering realistic functional and error scenarios)
+
+## Test Features Against Expected Success And Failure Scenarios
+
+**Impact: HIGH (prevents under-tested workflows by covering realistic functional and error scenarios)**
+
+When adding a feature, do not stop at the happy path. Create a test set that covers correct behavior, expected validation failures, interrupted flows, and realistic edge cases for that workflow.
+
+Wrong:
+
+```php
+// New CSV enrolment feature added.
+// Only manual testing of the successful import path was performed.
+```
+
+Preferred:
+
+```php
+// Add coverage for the normal path and for realistic failure scenarios:
+// - valid CSV with expected enrolments
+// - missing required column
+// - empty row or malformed value
+// - interrupted or partial upload
+// - user without required capability
+// - duplicate or already-enrolled records
+// - clear user-facing error reporting where applicable
+```
+
+Why it matters:
+
+- Moodle features often fail at boundaries such as permissions, malformed input, partial form submissions, or interrupted file handling
+- Happy-path-only testing leaves the highest-risk behaviors unverified
+- Good scenario coverage improves both correctness and the quality of recovery and error messaging
+
+Recommended remediation:
+
+- For each feature, identify the success path, validation failures, permission failures, and operational edge cases
+- Add PHPUnit coverage for backend logic and Behat coverage when the workflow is form-, file-, or UI-driven
+- Test realistic error cases such as missing fields, invalid formats, duplicates, interrupted uploads, and partial processing
+- Verify not only the failure but also the expected remediation behavior, such as rollback, skip rules, error aggregation, or actionable feedback
 
 Reference: [Moodle Developer Documentation](https://moodledev.io)
 

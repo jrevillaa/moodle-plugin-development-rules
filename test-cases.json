@@ -14,11 +14,25 @@
     "expected_shape": "class item_query_helper {\n    public static function get_filtered_items(array $filters): array {\n        // Query-focused responsibility.\n    }\n}"
   },
   {
+    "id": "arch-php-guidance-subordinate-to-moodle",
+    "title": "Keep Generic PHP Best Practices Subordinate To Moodle Conventions",
+    "impact": "HIGH",
+    "input": "class delete_item_service {\n    public function __construct(\n        private request_interface $request,\n        private authorization_interface $authorization,\n        private item_repository_interface $items,\n    ) {}\n\n    public function handle(): void {\n        $id = (int)$this->request->get('id');\n\n        if (!$this->authorization->allows('local/example:manage')) {\n            throw new forbidden_exception();\n        }\n\n        $this->items->delete($id);\n    }\n}",
+    "expected_shape": "$id = required_param('id', PARAM_INT);\n$context = context_system::instance();\n\nrequire_login();\nrequire_capability('local/example:manage', $context);\nrequire_sesskey();\n\n$DB->delete_records('local_example_items', ['id' => $id]);"
+  },
+  {
     "id": "async-scheduled-task",
     "title": "Move Recurrent Heavy Work to Scheduled Tasks",
     "impact": "MEDIUM",
     "input": "// Runs every time the page loads.\nlocal_example_sync_all_records();",
     "expected_shape": "namespace local_example\\task;\n\nclass sync_records extends \\core\\task\\scheduled_task {\n    public function get_name() {\n        return get_string('tasksyncrecords', 'local_example');\n    }\n\n    public function execute() {\n        local_example_sync_all_records();\n    }\n}"
+  },
+  {
+    "id": "compat-php-version-gating",
+    "title": "Gate PHP Modernization By Moodle And PHP Support Matrix",
+    "impact": "CRITICAL",
+    "input": "enum sync_status: string {\n    case pending = 'pending';\n    case done = 'done';\n}\n\nfinal class sync_result {\n    public function __construct(\n        public readonly sync_status $status,\n    ) {}\n}",
+    "expected_shape": "// First verify the target Moodle branch and supported PHP versions.\n// Then choose the most modern syntax that is actually safe for that branch.\nclass sync_result {\n    /** @var string */\n    private $status;\n\n    public function __construct(string $status) {\n        $this->status = $status;\n    }\n\n    public function get_status(): string {\n        return $this->status;\n    }\n}"
   },
   {
     "id": "compat-upgrade-path",
@@ -49,6 +63,20 @@
     "expected_shape": "namespace local_example\\external;\n\nclass get_items extends \\external_api {\n    public static function execute() {\n        global $DB;\n        return $DB->get_records('local_example_items');\n    }\n}"
   },
   {
+    "id": "external-contract-and-exposure",
+    "title": "Validate External API Contracts And Minimize Service Exposure",
+    "impact": "HIGH",
+    "input": "namespace local_example\\external;\n\nclass enrol_users extends \\external_api {\n    public static function execute($courseid, $userid) {\n        global $DB;\n\n        $DB->insert_record('local_example_enrolments', [\n            'courseid' => $courseid,\n            'userid' => $userid,\n        ]);\n\n        return ['ok' => true];\n    }\n}",
+    "expected_shape": "namespace local_example\\external;\n\nclass enrol_users extends \\external_api {\n    public static function execute_parameters(): \\external_function_parameters {\n        return new \\external_function_parameters([\n            'courseid' => new \\external_value(PARAM_INT, 'Course id'),\n            'userid' => new \\external_value(PARAM_INT, 'User id'),\n        ]);\n    }\n\n    public static function execute(int $courseid, int $userid): array {\n        $params = self::validate_parameters(self::execute_parameters(), [\n            'courseid' => $courseid,\n            'userid' => $userid,\n        ]);\n\n        $context = \\context_course::instance($params['courseid']);\n        self::validate_context($context);\n        require_capability('local/example:enrol', $context);\n\n        return ['ok' => true];\n    }\n\n    public static function execute_returns(): \\external_single_structure {\n        return new \\external_single_structure([\n            'ok' => new \\external_value(PARAM_BOOL, 'Whether the enrolment completed'),\n        ]);\n    }\n}"
+  },
+  {
+    "id": "external-write-transaction-safety",
+    "title": "Protect Multi-Step External Writes With Transaction And Recovery Design",
+    "impact": "HIGH",
+    "input": "namespace local_example\\external;\n\nclass import_enrolments extends \\external_api {\n    public static function execute(int $courseid, array $userids): array {\n        global $DB;\n\n        foreach ($userids as $userid) {\n            $DB->insert_record('local_example_queue', [\n                'courseid' => $courseid,\n                'userid' => $userid,\n            ]);\n\n            enrol_try_internal_enrol($courseid, $userid);\n        }\n\n        return ['ok' => true];\n    }\n}",
+    "expected_shape": "namespace local_example\\external;\n\nclass import_enrolments extends \\external_api {\n    public static function execute(int $courseid, array $userids): array {\n        global $DB;\n\n        $transaction = $DB->start_delegated_transaction();\n\n        foreach ($userids as $userid) {\n            $DB->insert_record('local_example_queue', [\n                'courseid' => $courseid,\n                'userid' => $userid,\n            ]);\n\n            enrol_try_internal_enrol($courseid, $userid);\n        }\n\n        $transaction->allow_commit();\n\n        return ['ok' => true];\n    }\n}"
+  },
+  {
     "id": "lifecycle-file-api",
     "title": "Use Moodle File API for Managed Files",
     "impact": "MEDIUM",
@@ -75,6 +103,13 @@
     "impact": "MEDIUM",
     "input": "$PAGE->set_title('Manage items');\necho html_writer::tag('button', 'Save');",
     "expected_shape": "$PAGE->set_title(get_string('manageitems', 'local_example'));\necho html_writer::tag('button', get_string('savechanges'));"
+  },
+  {
+    "id": "quality-scenario-based-testing",
+    "title": "Test Features Against Expected Success And Failure Scenarios",
+    "impact": "HIGH",
+    "input": "// New CSV enrolment feature added.\n// Only manual testing of the successful import path was performed.",
+    "expected_shape": "// Add coverage for the normal path and for realistic failure scenarios:\n// - valid CSV with expected enrolments\n// - missing required column\n// - empty row or malformed value\n// - interrupted or partial upload\n// - user without required capability\n// - duplicate or already-enrolled records\n// - clear user-facing error reporting where applicable"
   },
   {
     "id": "quality-testing-coverage",

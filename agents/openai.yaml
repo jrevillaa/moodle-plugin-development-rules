@@ -1,6 +1,6 @@
 interface:
   display_name: "Moodle Plugin Dev Rules"
-  short_description: "Audit and build Moodle plugins the right way"
+  short_description: "Audit, modernize, and build Moodle plugins with Moodle-first rules"
   icon_small: "./assets/moodle-plugin-rules-small.svg"
   icon_large: "./assets/moodle-plugin-rules-large.svg"
   brand_color: "#F98012"

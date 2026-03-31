@@ -9,6 +9,8 @@ description: Moodle plugin development standards and review rules for implementi
 
 Apply Moodle-native implementation patterns before writing or reviewing code. Prefer platform APIs and established plugin architecture over ad hoc PHP, HTML, or JavaScript.
 
+Use general PHP best practices only when they reinforce Moodle's own expectations. If a generic PHP recommendation conflicts with Moodle-supported versions, Moodle coding style, core APIs, or common subsystem patterns, prefer Moodle.
+
 Start by identifying the subsystem being touched: page output, forms, JavaScript, navigation, access, data, strings, or rendering. Then choose the closest Moodle abstraction and implement through it instead of assembling raw output manually.
 
 ## When To Apply
@@ -44,6 +46,7 @@ Reference this skill when:
 3. Reject framework-level anti-patterns even if they are faster to type.
 4. Keep presentation out of business logic whenever Moodle provides a rendering layer.
 5. Follow existing Moodle naming, file placement, and page setup conventions in the target plugin.
+6. When the task is mainly PHP-centric, check the target Moodle branch and supported PHP version before suggesting language features or style changes.
 
 ## Operating Modes
 
@@ -126,6 +129,12 @@ When the task involves plugin architecture, hooks, callbacks, file layout, namin
 
 When the task involves plugin-specific conventions for `local`, `mod`, `block`, `report`, `theme`, `auth`, `enrol`, or similar plugin types, read [plugin-type-guidance.md](./references/plugin-type-guidance.md).
 
+When the task involves PHP language features, typing, exceptions, code organization, or generic "best practices" requests, read [php-best-practices.md](./references/php-best-practices.md).
+
+When the task involves PHP formatting, naming consistency, PHPCS, coding standards, or PSR-style requests, read [coding-style-and-phpcs.md](./references/coding-style-and-phpcs.md).
+
+When the task involves Moodle 5.x theme work, Boost-based UI customization, SCSS, Bootstrap classes, template overrides, or renderer-based visual changes, read [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md).
+
 When the task involves modernizing legacy code or replacing older Moodle patterns with current ones, read [migration-patterns.md](./references/migration-patterns.md).
 
 When the task involves spotting common mistakes quickly or showing "wrong vs preferred" implementation guidance, read [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md).
@@ -180,6 +189,10 @@ Do not choose database APIs mechanically. Prefer the simplest Moodle DB API that
 
 Do not add plugin behavior that ignores supported Moodle version boundaries, upgrade paths, privacy obligations, or testability.
 
+Do not recommend generic PHP modernizations mechanically. Check whether the target Moodle version, plugin branch, and local codebase style actually support the suggested syntax or pattern before applying it.
+
+Do not import PSR, SOLID, or modern PHP guidance in a way that fights Moodle's APIs, file layout, globals, access patterns, or subsystem conventions. Use them as secondary heuristics, not as a replacement for Moodle-native design.
+
 Do not mix data loading, permission logic, and markup generation in one procedural block when Moodle offers separate APIs for those concerns.
 
 ## Expected Output Style
@@ -217,6 +230,9 @@ Prefer concrete remediation guidance such as:
 ## References
 
 - [architecture-and-naming.md](./references/architecture-and-naming.md): Hooks, callbacks, folder layout, naming, constants, helpers, and code organization.
+- [php-best-practices.md](./references/php-best-practices.md): PHP guidance filtered through Moodle compatibility, coding style, and subsystem expectations.
+- [coding-style-and-phpcs.md](./references/coding-style-and-phpcs.md): Moodle-first PHP coding style, naming, and PHPCS verification guidance.
+- [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md): Moodle 5.x theme, Boost, Bootstrap 5.3, SCSS, and UI override guidance.
 - [plugin-type-guidance.md](./references/plugin-type-guidance.md): Practical guidance by Moodle plugin type.
 - [migration-patterns.md](./references/migration-patterns.md): Legacy-to-modern Moodle refactor patterns.
 - [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md): Common mistakes with "wrong vs preferred" examples.
