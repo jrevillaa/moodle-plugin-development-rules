@@ -95,6 +95,33 @@ Do not add broad service exposure by default.
 
 After changing `db/services.php`, remember that Moodle may require cache purging or service refresh before the updated registration is visible in practice.
 
+Registration does not prove that an existing token can call the function. Before release, verify:
+
+- the intended custom service contains the function
+- the token user has the required capability
+- token IP/time restrictions allow the real consumer
+- a minimal authenticated request succeeds with consumer-equivalent configuration
+
+Inspect the target schema or use Moodle administration APIs before writing operational SQL. Never infer token/service column names.
+
+## Outbound HTTP Query Separators
+
+Moodle core sets `arg_separator.output` to `&amp;` for HTML safety. That global also affects `http_build_query()`.
+
+For outbound HTTP clients, curl, OAuth token requests, and third-party APIs:
+
+- always call `http_build_query($params, '', '&')`
+- never reuse an HTML-encoded query string on the wire
+- treat HTTP 200 + empty collections as a possible separator bug until the exact URL is inspected
+
+`moodle_url` and HTML output helpers remain correct for page links. Do not confuse HTML attribute encoding with wire-protocol URL building.
+
+## Idempotency And Delivery State
+
+For outbound integrations, assume retries, overlapping time windows, and timeout-after-send failures. Define a stable delivery key or watermark and persist attempt, acknowledgement, response reference, and error state.
+
+Do not resend data already acknowledged by the remote system. Test overlapping windows and retry paths explicitly.
+
 ## Testing And Debugging
 
 Prefer Moodle-native testing and verification paths:
@@ -119,6 +146,10 @@ Flag the implementation if you see:
 - Weak or overly broad entries in `db/services.php`
 - Write endpoints with multi-step persistence and no transaction or rollback strategy
 - Return payloads with inconsistent or undocumented structure
+- Assuming `db/services.php` automatically grants an existing token access
+- Retried or overlapping outbound deliveries with no idempotency key or acknowledgement state
+- `http_build_query()` used for outbound HTTP without an explicit `'&'` separator
+- Remote APIs returning empty pages while connectivity and auth succeed
 
 ## Remediation Language
 
@@ -130,3 +161,6 @@ Use wording like:
 - "Validate parameters and context before checking capabilities or touching data."
 - "Tighten `db/services.php` so the function is exposed only as broadly as needed."
 - "This write endpoint should review transaction boundaries so partial failure does not leave inconsistent Moodle state."
+- "Verify the deployed custom service and token with a real authenticated smoke request."
+- "Persist an idempotency key and acknowledgement so overlapping retries do not resend delivered data."
+- "Pass `'&'` to `http_build_query()` so the outbound URL does not contain `&amp;`."

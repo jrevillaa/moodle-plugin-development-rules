@@ -4,7 +4,8 @@ import path from 'node:path'
 const root = process.cwd()
 const rulesDir = path.join(root, 'rules')
 const metadataPath = path.join(root, 'metadata.json')
-const outputPath = path.join(root, 'AGENTS.md')
+const agentsPath = path.join(root, 'AGENTS.md')
+const indexPath = path.join(root, 'references', 'rules-index.md')
 
 const metadata = JSON.parse(await fs.readFile(metadataPath, 'utf8'))
 const files = (await fs.readdir(rulesDir))
@@ -40,7 +41,7 @@ const rules = await Promise.all(
   })
 )
 
-const lines = [
+const agents = [
   '# Moodle Plugin Development Rules',
   '',
   `**Version ${metadata.version}**  `,
@@ -49,7 +50,8 @@ const lines = [
   '',
   '> **Note:**  ',
   '> This document is generated from the individual rule files in `rules/`.  ',
-  '> It is primarily intended for agents and LLMs reviewing or generating Moodle plugin code.',
+  '> It is a full catalog for humans and installers.  ',
+  '> Agents should prefer `SKILL.md`, `references/rules-index.md`, and on-demand `rules/` files instead of loading this whole document.',
   '',
   '---',
   '',
@@ -64,25 +66,60 @@ const lines = [
 ]
 
 for (const rule of rules) {
-  lines.push(`- \`${rule.file}\` - ${rule.title}`)
+  agents.push(`- \`${rule.file}\` - ${rule.title}`)
 }
 
-lines.push('', '---', '', '## Full Rules', '')
+agents.push('', '---', '', '## Full Rules', '')
 
 for (const rule of rules) {
-  lines.push(`### ${rule.title}`)
-  lines.push('')
-  lines.push(`**Impact:** ${rule.impact}${rule.impactDescription ? ` (${rule.impactDescription})` : ''}`)
-  lines.push('')
-  lines.push(rule.body)
-  lines.push('')
+  agents.push(`### ${rule.title}`)
+  agents.push('')
+  agents.push(`**Impact:** ${rule.impact}${rule.impactDescription ? ` (${rule.impactDescription})` : ''}`)
+  agents.push('')
+  agents.push(rule.body)
+  agents.push('')
 }
 
-lines.push('## References', '')
+agents.push('## References', '')
 for (const ref of metadata.references) {
-  lines.push(`- ${ref}`)
+  agents.push(`- ${ref}`)
 }
-lines.push('')
+agents.push('')
 
-await fs.writeFile(outputPath, `${lines.join('\n')}\n`)
-console.log(`Built ${path.relative(root, outputPath)}`)
+await fs.writeFile(agentsPath, `${agents.join('\n')}\n`)
+
+const byPrefix = new Map()
+for (const rule of rules) {
+  const prefix = rule.file.split('-')[0]
+  if (!byPrefix.has(prefix)) {
+    byPrefix.set(prefix, [])
+  }
+  byPrefix.get(prefix).push(rule)
+}
+
+const index = [
+  '# Rules Index',
+  '',
+  `Generated catalog of ${rules.length} formal rules for version ${metadata.version}.`,
+  '',
+  'Use this index to choose the relevant rule file, then read only that file under `rules/`.',
+  'Do not load `AGENTS.md` by default.',
+  ''
+]
+
+for (const [prefix, prefixRules] of byPrefix) {
+  index.push(`## \`${prefix}-\``)
+  index.push('')
+  for (const rule of prefixRules) {
+    const impactBit = rule.impactDescription
+      ? `${rule.impact} — ${rule.impactDescription}`
+      : rule.impact
+    index.push(`- [\`${rule.file}\`](../rules/${rule.file}) — **${rule.title}** (${impactBit})`)
+  }
+  index.push('')
+}
+
+await fs.writeFile(indexPath, `${index.join('\n')}\n`)
+
+console.log(`Built ${path.relative(root, agentsPath)}`)
+console.log(`Built ${path.relative(root, indexPath)}`)

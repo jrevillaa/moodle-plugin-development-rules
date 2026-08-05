@@ -1,28 +1,28 @@
 ---
 name: moodle-plugin-development-rules
-description: Moodle plugin development standards and review rules for implementing or refactoring Moodle plugins using Moodle-native patterns. Use when Codex works on Moodle plugin code such as local, mod, block, report, admin tool, enrol, auth, question, theme, availability, repository, or similar plugin types; when editing PHP, Mustache, JS, renderer, or form code in a Moodle codebase; or when reviewing code for Moodle-specific anti-patterns such as direct JavaScript requires instead of AMD modules, hand-built HTML forms instead of Form API, and view markup echoed from PHP instead of Mustache templates and renderers.
+description: Moodle-first plugin engineering and release-safety rules for AI agents auditing, implementing, modernizing, or reviewing Moodle plugins. Use when working on local, mod, block, report, admin tool, enrol, auth, question, theme, availability, repository, or similar plugin types; when editing PHP, Mustache, AMD/JS, renderer, form, external API, upgrade, privacy, backup, task, queue, outbound HTTP, or theme/SCSS code; when targeting Moodle 5.x Boost/Bootstrap 5.3 UI; or when preventing Moodle anti-patterns and release failures such as invented core APIs, fragile upgrades, http_build_query amp; separators, inconsistent tables/statuses, raw JS, hand-built forms, weak service-token wiring, or unpaginated reports.
 ---
 
 # Moodle Plugin Development Rules
 
 ## Overview
 
-Apply Moodle-native implementation patterns before writing or reviewing code. Prefer platform APIs and established plugin architecture over ad hoc PHP, HTML, or JavaScript.
+Apply Moodle-native patterns before writing or reviewing plugin code. Prefer Moodle APIs and plugin architecture over ad hoc PHP, HTML, or JavaScript. Use generic PHP guidance only when it reinforces Moodle conventions and the target branch's PHP matrix.
 
-Use general PHP best practices only when they reinforce Moodle's own expectations. If a generic PHP recommendation conflicts with Moodle-supported versions, Moodle coding style, core APIs, or common subsystem patterns, prefer Moodle.
+For Moodle 5.x work, treat Boost and Bootstrap 5.3 as the UI baseline, confirm PHP 8.2+ compatibility for Moodle 5.0+, and prefer current class-based external APIs, Mustache/renderers, and AMD modules.
 
-Start by identifying the subsystem being touched: page output, forms, JavaScript, navigation, access, data, strings, or rendering. Then choose the closest Moodle abstraction and implement through it instead of assembling raw output manually.
+Identify the subsystem first: access, forms, rendering, JavaScript, data, external APIs, outbound HTTP clients, tasks/events/cache, privacy/files/backup, theme/UI, or tests. Then implement through the closest Moodle abstraction.
+
+Keep context cheap: follow [context-loading.md](./references/context-loading.md). Prefer `SKILL.md` → [rules-index.md](./references/rules-index.md) → only the needed `rules/` and reference files. Do not load `AGENTS.md` unless the user explicitly asks for the full compiled catalog.
 
 ## When To Apply
 
-Reference this skill when:
-
-- Writing or refactoring Moodle plugin PHP code
-- Reviewing a Moodle plugin for architecture, security, or scalability issues
-- Implementing forms, page output, templates, renderers, or JS behavior
-- Building reports, admin tools, exports, or data-heavy screens
-- Creating or modernizing web services, hooks, tasks, observers, or settings
-- Migrating legacy Moodle plugin code to current Moodle-native patterns
+- Writing, refactoring, auditing, or modernizing Moodle plugin code
+- Building forms, pages, templates, renderers, AMD modules, reports, or admin tools
+- Creating or hardening web services, outbound HTTP clients, hooks, tasks, observers, settings, or upgrades
+- Doing Moodle 5.x theme, Boost, Bootstrap 5.3, SCSS, or template-override work
+- Reviewing privacy, file, backup/restore, cache, or scenario-based test coverage
+- Closing any Moodle plugin change that will be upgraded, staged, integrated, or handed to consumers
 
 ## Rule Categories By Priority
 
@@ -30,223 +30,167 @@ Reference this skill when:
 | --- | --- | --- | --- |
 | 1 | Capabilities and security | Critical | `security-` |
 | 2 | Version compatibility and upgrades | Critical | `compat-` |
-| 3 | Forms, rendering, and output structure | High | `ui-` |
+| 3 | Forms, rendering, Moodle 5 UI, and output | High | `ui-` |
 | 4 | JavaScript and frontend behavior | High | `amd-` |
 | 5 | Data access, SQL choice, and scalability | High | `data-` |
 | 6 | Web services and external APIs | Medium-High | `external-` |
 | 7 | Events, tasks, cache, and async work | Medium | `async-` |
 | 8 | Privacy, files, and backup/restore | Medium | `lifecycle-` |
-| 9 | Naming, helpers, and plugin structure | Medium | `arch-` |
+| 9 | Structure, maintainability, helpers, and naming | High | `arch-` |
 | 10 | Accessibility, i18n, and testing | Medium | `quality-` |
 
-## Core Workflow
-
-1. Inspect the plugin type and nearby conventions before changing code.
-2. Reuse Moodle APIs first: Form API, output renderers, Mustache templates, string API, capability checks, DB API, and AMD JavaScript.
-3. Reject framework-level anti-patterns even if they are faster to type.
-4. Keep presentation out of business logic whenever Moodle provides a rendering layer.
-5. Follow existing Moodle naming, file placement, and page setup conventions in the target plugin.
-6. When the task is mainly PHP-centric, check the target Moodle branch and supported PHP version before suggesting language features or style changes.
+Formal rules live in `rules/`. Supporting depth lives in `references/`. Read only the references needed for the current task.
 
 ## Operating Modes
 
-Choose the mode that best matches the user's request.
+Choose one mode, then load the matching starter references. **Release Gate is always active** after implementation, migration, or claimed completion: it is not optional, only proportionate.
 
-### Audit Mode
+| Mode | When | Read first |
+| --- | --- | --- |
+| Audit | review, audit, validate, inspect, harden | [plugin-review-workflow.md](./references/plugin-review-workflow.md), [quick-triage.md](./references/quick-triage.md) |
+| Fix | implement or refactor | [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md), matching topic reference |
+| Migration | modernize legacy Moodle code | [migration-patterns.md](./references/migration-patterns.md), [moodle5-platform.md](./references/moodle5-platform.md) |
+| Theme/UI | Moodle 5.x visuals, Boost, SCSS, overrides | [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md), rule `ui-moodle5-theme` |
 
-Use when the user asks to review, audit, validate, inspect, assess, or harden an existing plugin. Start with the Initial Validation pass and report findings by criticity.
+Every mode ends with the proportionate Release Gate from [release-gate-checklist.md](./references/release-gate-checklist.md).
 
-### Fix Mode
+### Core Workflow
 
-Use when the user asks to implement or refactor changes. Still run a lightweight validation first, then apply Moodle-native fixes in priority order.
+1. Inspect plugin type and nearby conventions.
+2. Reuse Moodle APIs first: access, Form API, renderers, Mustache, strings, DB API, AMD, external API, tasks.
+3. For Moodle 5.x UI, default to Boost + Bootstrap 5.3 patterns.
+4. Reject framework anti-patterns even when faster to type.
+5. Check target Moodle/PHP matrix before modern PHP syntax or new APIs.
+6. For outbound HTTP, force literal `&` query separators; never send Moodle's HTML `&amp;` on the wire.
+7. Report or fix in priority order: Critical → Major → Minor.
+8. Always close with a proportionate Release Gate: mark each relevant check Verified, Not applicable, or Not verified. Never claim readiness for checks that were not run.
 
-### Migration Mode
+### Proportionate Release Gate
 
-Use when the user wants to modernize legacy Moodle code. Prioritize replacing raw HTML output, direct JavaScript loading, weak access checks, legacy external API placement, and non-scalable list handling.
+Scale the gate to the change:
+
+- Tiny string/UI-only change: static integrity + targeted smoke of the touched view
+- Data/workflow change: full producer → DB → task → final-state smoke
+- Upgrade/schema change: self-contained upgrade + staging upgrade path
+- External/outbound HTTP change: literal `&` URL check + consumer-equivalent request
+- Token/service change: service membership + authenticated smoke request
 
 ## Initial Validation
 
-When the user asks to review, audit, validate, modernize, or improve a Moodle plugin, start with a compliance pass before proposing implementation details.
+For audit, validation, modernization, or improvement requests, run a compliance pass before deep implementation advice. Cover:
 
-Validate whether the plugin already follows the rules in this skill across:
+- Architecture, hooks, callbacks, tasks, observers, and cache invalidation
+- Structural health: entrypoint thinness, conditional depth, duplicated logic, loop cost, file size
+- Capabilities, context, sesskey, and request security
+- Form API, Mustache, renderers, AMD, and Moodle 5 UI/theme patterns when relevant
+- DB API choice, pagination, filtering, exports, and upgrades
+- Upgrade self-containment plus verification of core methods and installed schema
+- Persistence flow consistency across UI/API → database → task → final state
+- External API contracts, outbound HTTP query separators, idempotency, service exposure, and token/service wiring
+- Privacy, files, backup/restore, and tests for success plus failure scenarios
+- Contextual guidance for ambiguous filters, icon actions, exclusions, and destructive operations
 
-- Architecture and file placement
-- Hooks, callbacks, tasks, and observers
-- Strings and language pack usage
-- Capabilities, context, and request security
-- Form API, renderers, and Mustache
-- AMD JavaScript and browser behavior
-- DB API, SQL choices, pagination, filtering, and exports
-- Version compatibility and upgrade paths
-- External APIs, privacy, files, backup/restore, cache, and tests
-
-If the plugin violates any rule, report the issue, explain the Moodle-native replacement, and classify the recommendation by criticity.
-
-Validate both correctness and maintainability. A plugin may work and still fail this skill if it ignores Moodle-native architecture, scalability, accessibility, or security expectations.
+Classify every finding as Critical, Major, or Minor. A plugin may work and still fail this skill if it ignores Moodle-native architecture, scalability, accessibility, security, or Moodle 5 UI expectations.
 
 ## Criticity Levels
 
-Use exactly these three levels when reporting findings:
-
 ### Critical
 
-Use for security, authorization, privacy, data integrity, broken upgrade paths, invalid external API exposure, or patterns likely to fail in production or violate Moodle core expectations materially.
-
-Typical examples:
-
-- Missing capability or context checks
-- Unsafe request handling
-- Invalid file or privacy handling
-- Version-incompatible API usage
-- Schema changes outside upgrade flow
+Security, authorization, privacy, data integrity, broken upgrades, invalid external exposure, outbound HTTP query corruption, or production-breaking Moodle violations.
 
 ### Major
 
-Use for architectural, performance, maintainability, or framework-compliance problems that are not immediately dangerous but should be fixed before the code is considered solid.
-
-Typical examples:
-
-- Hand-built forms instead of Form API
-- Echoed complex views instead of Mustache and renderers
-- Wrong placement of external API code
-- Large tables without pagination, sorting, or filtering
-- Poor DB API choice for the query shape
+Architecture, performance, maintainability, spaghetti growth, duplicated domain logic, per-row queries, fat entrypoints, missing backup/restore for course data, Bootstrap 4-on-Moodle-5 UI, weak forms/rendering, or unscalable tables.
 
 ### Minor
 
-Use for lower-risk improvements that still increase consistency, readability, reuse, and Moodle alignment.
+Hardcoded strings, naming, low-risk helper cleanup, or modest test gaps.
 
-Typical examples:
+Use [findings-examples.md](./references/findings-examples.md) for wording. Use [review-checklist.md](./references/review-checklist.md) for PR-style audits.
 
-- Hardcoded strings that should move to `get_string()`
-- Weak variable or function naming
-- Missing helper extraction for repeated domain logic
-- Missing low-risk test coverage additions
+## Topic Routing
 
-## Decision Rules
+Read [routing.md](./references/routing.md) for the full map. Minimum routes:
 
-When the task involves plugin architecture, hooks, callbacks, file layout, naming, constants, classes, or helper boundaries, read [architecture-and-naming.md](./references/architecture-and-naming.md).
-
-When the task involves plugin-specific conventions for `local`, `mod`, `block`, `report`, `theme`, `auth`, `enrol`, or similar plugin types, read [plugin-type-guidance.md](./references/plugin-type-guidance.md).
-
-When the task involves PHP language features, typing, exceptions, code organization, or generic "best practices" requests, read [php-best-practices.md](./references/php-best-practices.md).
-
-When the task involves PHP formatting, naming consistency, PHPCS, coding standards, or PSR-style requests, read [coding-style-and-phpcs.md](./references/coding-style-and-phpcs.md).
-
-When the task involves Moodle 5.x theme work, Boost-based UI customization, SCSS, Bootstrap classes, template overrides, or renderer-based visual changes, read [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md).
-
-When the task involves modernizing legacy code or replacing older Moodle patterns with current ones, read [migration-patterns.md](./references/migration-patterns.md).
-
-When the task involves spotting common mistakes quickly or showing "wrong vs preferred" implementation guidance, read [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md).
-
-When the task involves settings pages, plugin config, navigation, URLs, icons, or safe output composition, read [navigation-settings-and-output.md](./references/navigation-settings-and-output.md).
-
-When the task involves capabilities, access checks, user data, CSRF, context, or secure page handling, read [capabilities-and-security.md](./references/capabilities-and-security.md).
-
-When the task involves user interaction in the browser, read [frontend-and-js.md](./references/frontend-and-js.md).
-
-When the task involves form creation, validation, or submission handling, read [forms-and-rendering.md](./references/forms-and-rendering.md).
-
-When the task involves page output, view composition, tables, cards, or templated UI, read [forms-and-rendering.md](./references/forms-and-rendering.md).
-
-When the task involves persistence, performance, exports, Moodle version compatibility, upgrade steps, or large result sets, read [data-performance-and-upgrades.md](./references/data-performance-and-upgrades.md).
-
-When the task involves web services, mobile support, or external functions, read [webservices-and-external-api.md](./references/webservices-and-external-api.md).
-
-When the task involves events, observers, hooks, adhoc tasks, scheduled tasks, cache, or asynchronous processing, read [events-tasks-and-cache.md](./references/events-tasks-and-cache.md).
-
-When the task involves privacy, personal data, file handling, draft areas, backup/restore, or data lifecycle concerns, read [privacy-files-and-backup.md](./references/privacy-files-and-backup.md).
-
-When the task involves accessibility, internationalization details, strings in JS, placeholders, or user-facing text quality, read [accessibility-and-i18n.md](./references/accessibility-and-i18n.md).
-
-When the task involves test coverage, fixtures, generators, PHPUnit, Behat, or regression-proofing, read [testing-and-quality.md](./references/testing-and-quality.md).
-
-Use [plugin-review-workflow.md](./references/plugin-review-workflow.md) when doing a full plugin audit.
-
-Use [quick-triage.md](./references/quick-triage.md) when classifying findings rapidly during review.
-
-Use [review-checklist.md](./references/review-checklist.md) when auditing code or preparing a PR review.
-
-Use [findings-examples.md](./references/findings-examples.md) to keep audit wording sharp, concrete, and consistent.
+| Topic | Read |
+| --- | --- |
+| Which formal rule to open | [rules-index.md](./references/rules-index.md) |
+| Context cost / what not to load | [context-loading.md](./references/context-loading.md) |
+| Plugin type / layout / helpers | [plugin-type-guidance.md](./references/plugin-type-guidance.md), [architecture-and-naming.md](./references/architecture-and-naming.md) |
+| Spaghetti / duplication / fat entrypoints / heavy loops / file sprawl | [maintainability-and-structure.md](./references/maintainability-and-structure.md) |
+| PHP syntax / PHPCS / PSR tension | [php-best-practices.md](./references/php-best-practices.md), [coding-style-and-phpcs.md](./references/coding-style-and-phpcs.md) |
+| Moodle 5.x platform or UI | [moodle5-platform.md](./references/moodle5-platform.md), [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md) |
+| Access / security | [capabilities-and-security.md](./references/capabilities-and-security.md) |
+| Forms / Mustache / output | [forms-and-rendering.md](./references/forms-and-rendering.md) |
+| JS / AMD | [frontend-and-js.md](./references/frontend-and-js.md) |
+| DB / upgrades / scale | [data-performance-and-upgrades.md](./references/data-performance-and-upgrades.md) |
+| External APIs / outbound HTTP | [webservices-and-external-api.md](./references/webservices-and-external-api.md) |
+| Events / tasks / cache | [events-tasks-and-cache.md](./references/events-tasks-and-cache.md) |
+| Privacy / files / backup | [privacy-files-and-backup.md](./references/privacy-files-and-backup.md) |
+| A11y / i18n / tests | [accessibility-and-i18n.md](./references/accessibility-and-i18n.md), [testing-and-quality.md](./references/testing-and-quality.md) |
+| Always-on release validation | [release-gate-checklist.md](./references/release-gate-checklist.md) |
 
 ## Non-Negotiable Rules
 
-Do not hardcode user-facing text. Use `get_string()` and plugin language packs for labels, headings, buttons, validation messages, notifications, and template strings.
-
-Do not skip capability and context checks on pages, actions, AJAX endpoints, external functions, or exports. Check access explicitly and early.
-
-Do not load custom JavaScript by directly requiring raw files from PHP output. Implement AMD modules under `amd/src/` and invoke them through Moodle's AMD loading mechanism.
-
-Do not construct real forms with ad hoc `echo "<form>..."` output. Use Moodle Form API with `moodleform` unless the target surface is explicitly not a Form API use case.
-
-Do not embed substantial HTML views directly inside PHP with concatenated `echo` calls. Move view markup to Mustache templates and route rendering through renderer classes or output classes where appropriate.
-
-Do not place new external service implementations in legacy `externallib.php` when the target Moodle version and codebase support `classes/external/`. Prefer the namespaced class-based structure.
-
-Do not assume small datasets. For list screens, design for pagination, sorting, filtering, and scalable queries by default.
-
-Do not choose database APIs mechanically. Prefer the simplest Moodle DB API that fits the access pattern, and use SQL-based methods such as `get_records_sql()` when filtering, joining, sorting, aggregating, or paginating would make simpler APIs inefficient or misleading.
-
-Do not add plugin behavior that ignores supported Moodle version boundaries, upgrade paths, privacy obligations, or testability.
-
-Do not recommend generic PHP modernizations mechanically. Check whether the target Moodle version, plugin branch, and local codebase style actually support the suggested syntax or pattern before applying it.
-
-Do not import PSR, SOLID, or modern PHP guidance in a way that fights Moodle's APIs, file layout, globals, access patterns, or subsystem conventions. Use them as secondary heuristics, not as a replacement for Moodle-native design.
-
-Do not mix data loading, permission logic, and markup generation in one procedural block when Moodle offers separate APIs for those concerns.
+- Use `get_string()` for user-facing text.
+- Enforce context and capabilities early on pages, actions, AJAX, externals, and exports.
+- Load browser logic via AMD (`amd/src/` + `js_call_amd()`), not raw JS requires.
+- Use Form API for real input workflows; Mustache/renderers for non-trivial views.
+- Prefer `classes/external/` for new external APIs when the target Moodle version supports it.
+- Design list/report screens for pagination, sorting, and filtering.
+- Choose DB APIs by query shape; put schema/capability evolution in upgrade paths.
+- Keep upgrade steps self-contained; do not call mutable classes from the same plugin.
+- Verify core methods and schema fields in the target Moodle branch instead of inferring names.
+- Trace queue/workflow persistence from entrypoint through task to final state, using one status contract.
+- Gate PHP modernizations by the Moodle/PHP support matrix.
+- Keep PSR/SOLID subordinate to Moodle APIs and file layout.
+- Keep entrypoints thin, use guard clauses instead of deep nesting, and give each behavior one owner.
+- Keep one canonical implementation per domain operation; do not copy logic across entrypoints.
+- Never query, build contexts, or call remote services once per row inside a loop.
+- Decompose files by responsibility before they sprawl past a healthy size.
+- For Moodle 5.x UI, use Boost/Bootstrap 5.3 patterns (`data-bs-*`, modern utilities), not Bootstrap 4 defaults.
+- Review Privacy API, File API, backup/restore, events/observers, and cache invalidation when the feature creates those obligations.
+- Make retried external deliveries idempotent and verify real service/token access before handoff.
+- For outbound HTTP query strings, call `http_build_query($params, '', '&')`; never send Moodle's HTML `&amp;` separator to an API.
+- Give operational views concise contextual help for ambiguous fields and icon actions; avoid information walls.
+- Cover non-trivial behavior with success and failure scenarios.
+- Always finish with a proportionate Release Gate; never claim release readiness for checks that were not actually run.
 
 ## Expected Output Style
 
-When implementing code, explain decisions in Moodle terms: which core API was chosen, why it fits, and which anti-pattern was avoided.
+Explain decisions in Moodle terms. On audits, group Critical → Major → Minor. For each finding include the violated rule, why it matters in Moodle, and the Moodle-native fix. Prefer short wrong/preferred comparisons.
 
-When reviewing code, call out violations explicitly and propose the Moodle-native replacement.
+After Fix, Migration, Theme/UI, or claimed completion, include a short Release Gate summary with Verified / Not applicable / Not verified items.
 
-When the request is an audit or validation, present findings grouped by criticity in this order: Critical, Major, Minor.
+Concrete remediation examples:
 
-For each finding, include:
-
-- The rule being violated
-- Why it matters in Moodle terms
-- The recommended Moodle-native remediation
-
-If no findings are discovered, say so explicitly and mention any residual risks or test gaps.
-
-When useful, show a concise "wrong / preferred" comparison instead of a long abstract explanation.
-
-Prefer concrete remediation guidance such as:
-
-- "Move this callback or integration point to the proper hook or Moodle callback location."
-- "Replace hardcoded text with `get_string()` entries in the language pack."
-- "Move this browser behavior into `amd/src/...` and load it with `js_call_amd()`."
-- "Replace this hand-built form with a `moodleform` subclass."
-- "Replace echoed markup with a renderer plus Mustache template."
-- "Add the missing context and capability checks before processing this action."
-- "Use the more appropriate DB API here; this query shape calls for SQL-based retrieval."
-- "Refactor this list screen to use paginated, sortable, filterable Moodle-native table output."
-- "Move this external API code to `classes/external/...` and declare the service cleanly."
-- "Add PHPUnit or Behat coverage for this behavior before merging."
-- "Check the plugin's supported Moodle versions before adopting this API."
+- "Add context and capability checks before this action."
+- "Move this markup to Mustache and render through a renderer."
+- "Replace Bootstrap 4 attributes with Bootstrap 5.3 `data-bs-*` utilities for Moodle 5.x."
+- "Queue this one-off heavy work in an adhoc task; keep recurrent work in a scheduled task."
+- "Trigger an event and handle the cross-cutting reaction in an observer."
+- "Define cache invalidation on every write path before keeping this cache."
+- "Add backup/restore support so this course data survives restore and course copy."
+- "Check the plugin's Moodle/PHP matrix before adopting this syntax."
+- "Keep this upgrade step self-contained instead of calling the plugin's new service class."
+- "Verify this method in the target Moodle core before using it in an upgrade."
+- "Explain that this filter uses `course.startdate` through the field label or help popup."
+- "Keep this page thin and move the domain work into `classes/`."
+- "Handle the failure cases first with guard clauses so this nesting disappears."
+- "Extract one canonical operation instead of duplicating this query per entrypoint."
+- "Preload these records in one query instead of querying inside the loop."
+- "Pass `'&'` to `http_build_query()` so the outbound API URL does not contain `&amp;`."
 
 ## References
 
-- [architecture-and-naming.md](./references/architecture-and-naming.md): Hooks, callbacks, folder layout, naming, constants, helpers, and code organization.
-- [php-best-practices.md](./references/php-best-practices.md): PHP guidance filtered through Moodle compatibility, coding style, and subsystem expectations.
-- [coding-style-and-phpcs.md](./references/coding-style-and-phpcs.md): Moodle-first PHP coding style, naming, and PHPCS verification guidance.
-- [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md): Moodle 5.x theme, Boost, Bootstrap 5.3, SCSS, and UI override guidance.
-- [plugin-type-guidance.md](./references/plugin-type-guidance.md): Practical guidance by Moodle plugin type.
-- [migration-patterns.md](./references/migration-patterns.md): Legacy-to-modern Moodle refactor patterns.
-- [anti-patterns-and-fixes.md](./references/anti-patterns-and-fixes.md): Common mistakes with "wrong vs preferred" examples.
-- [navigation-settings-and-output.md](./references/navigation-settings-and-output.md): Admin settings, URLs, navigation, icons, escaping, and page output rules.
-- [capabilities-and-security.md](./references/capabilities-and-security.md): Context resolution, capabilities, login checks, security boundaries, and safe request handling.
-- [frontend-and-js.md](./references/frontend-and-js.md): AMD rules, browser-side behavior, page requirements, and JS review guidance.
-- [forms-and-rendering.md](./references/forms-and-rendering.md): Form API, Mustache templates, renderer usage, and output separation rules.
-- [data-performance-and-upgrades.md](./references/data-performance-and-upgrades.md): DB API, pagination, exports, version support, upgrades, and performance rules.
-- [webservices-and-external-api.md](./references/webservices-and-external-api.md): External functions, service structure, validation, and return contracts.
-- [events-tasks-and-cache.md](./references/events-tasks-and-cache.md): Events, observers, tasks, hooks, and caching rules.
-- [privacy-files-and-backup.md](./references/privacy-files-and-backup.md): Privacy API, file API, draft areas, and backup/restore concerns.
-- [accessibility-and-i18n.md](./references/accessibility-and-i18n.md): Accessibility and internationalization rules for Moodle UI.
-- [testing-and-quality.md](./references/testing-and-quality.md): PHPUnit, Behat, generators, fixtures, and regression rules.
-- [plugin-review-workflow.md](./references/plugin-review-workflow.md): Step-by-step audit workflow for Moodle plugins.
-- [quick-triage.md](./references/quick-triage.md): Fast criticity guidance for audit findings.
-- [findings-examples.md](./references/findings-examples.md): Example audit findings written in the expected style.
-- [review-checklist.md](./references/review-checklist.md): Fast audit checklist for PR review or code generation validation.
+- [context-loading.md](./references/context-loading.md): What to load and what not to load
+- [rules-index.md](./references/rules-index.md): Compact formal-rule catalog
+- [routing.md](./references/routing.md): Full topic → reference map
+- [release-gate-checklist.md](./references/release-gate-checklist.md): Always-on proportionate handoff gate
+- [moodle5-platform.md](./references/moodle5-platform.md): Moodle 5.x platform baseline
+- [moodle5-theme-and-ui.md](./references/moodle5-theme-and-ui.md): Boost, Bootstrap 5.3, SCSS, overrides
+- [php-best-practices.md](./references/php-best-practices.md): Moodle-filtered PHP guidance and version matrix
+- [plugin-type-guidance.md](./references/plugin-type-guidance.md): Must-check guidance by plugin type
+- [maintainability-and-structure.md](./references/maintainability-and-structure.md): Strict structure lens for spaghetti, duplication, loops, and file sprawl
+- [plugin-review-workflow.md](./references/plugin-review-workflow.md), [quick-triage.md](./references/quick-triage.md), [review-checklist.md](./references/review-checklist.md), [findings-examples.md](./references/findings-examples.md)
+- Remaining topic guides under `references/` and formal rules under `rules/`

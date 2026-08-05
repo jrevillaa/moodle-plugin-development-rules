@@ -1,5 +1,11 @@
 # Privacy Files And Backup
 
+Formal rule companions:
+
+- `rules/lifecycle-privacy-review.md`
+- `rules/lifecycle-file-api.md`
+- `rules/lifecycle-backup-restore.md`
+
 ## Respect Privacy API Boundaries
 
 When the plugin stores, exports, or deletes personal data, implement the relevant Moodle Privacy API responsibilities instead of ad hoc data handling.

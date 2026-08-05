@@ -81,3 +81,173 @@ Wrong:
 Preferred:
 
 - Assume growth and implement pagination, sorting, and filtering from the start.
+
+## Moodle 5.x UI
+
+Wrong:
+
+- Ship Bootstrap 4 attributes/utilities (`data-toggle`, `ml-*`, `text-left`, `hidden`) on a Moodle 5.x target.
+
+Preferred:
+
+- Use Bootstrap 5.3 / Boost patterns (`data-bs-*`, `ms-*`, `text-start`, `visually-hidden`) and Mustache/theme overrides.
+
+## Events And Observers
+
+Wrong:
+
+- Duplicate cross-cutting side effects in every page, form, and external function.
+
+Preferred:
+
+- Trigger a domain event and handle shared reactions in observers.
+
+## Cache
+
+Wrong:
+
+- Cache derived data with no delete/purge on write paths.
+
+Preferred:
+
+- Define the cache intentionally and invalidate it on every relevant mutation.
+
+## Adhoc Versus Scheduled Work
+
+Wrong:
+
+- Block a request with expensive one-off processing, or force one-off work into a scheduled task.
+
+Preferred:
+
+- Queue adhoc tasks for deferred one-off work; use scheduled tasks for recurrent jobs.
+
+## Backup And Restore
+
+Wrong:
+
+- Store course/activity domain data without reviewing backup/restore obligations.
+
+Preferred:
+
+- Implement the backup/restore structure expected by the plugin type so data survives restore and course copy.
+
+## Upgrade Steps
+
+Wrong:
+
+- Call a newly introduced plugin service or status constant from `db/upgrade.php`.
+
+Preferred:
+
+- Keep historical upgrade steps self-contained with XMLDB, parameterized DML/SQL, literal legacy values, and config APIs.
+
+## Core API And Schema Verification
+
+Wrong:
+
+- Guess a plausible core method or database column name.
+
+Preferred:
+
+- Verify the method in the target core branch and inspect the real schema before writing operational SQL.
+
+## Queue And Status Workflows
+
+Wrong:
+
+- Let enqueue, task, and report code drift onto different table names or numeric status meanings.
+
+Preferred:
+
+- Trace the workflow end to end and use one documented persistence/status contract.
+
+## External Retries And Tokens
+
+Wrong:
+
+- Assume service registration grants every token access, or resend overlapping delivery windows without acknowledgement state.
+
+Preferred:
+
+- Verify the real service/token wiring and make delivery idempotent.
+
+## Outbound HTTP Query Strings
+
+Wrong:
+
+- Call `http_build_query($params)` for curl/API URLs and let Moodle's `&amp;` separator leak onto the wire.
+
+Preferred:
+
+- Call `http_build_query($params, '', '&')` and smoke-check the exact request URL for literal `&`.
+
+## Fat Entrypoints
+
+Wrong:
+
+- Read params, query, mutate records, and echo markup in one page script block.
+
+Preferred:
+
+- Keep params/context/capability/output in the entrypoint and delegate domain work to `classes/`.
+
+## Conditional Nesting
+
+Wrong:
+
+- Wrap the main behavior in nested `if`/`else` layers for invalid, missing, and unauthorized cases.
+
+Preferred:
+
+- Handle those cases first with guard clauses, then run the main path unnested.
+
+## Scattered Special Cases
+
+Wrong:
+
+- Thread mode/boolean flags and one-off branches through shared functions and renderers.
+
+Preferred:
+
+- Give each behavior one owner and dispatch explicitly.
+
+## Duplicated Domain Logic
+
+Wrong:
+
+- Copy the same query or rule into page, task, CLI, and external function.
+
+Preferred:
+
+- Extract one canonical operation and call it from every entrypoint.
+
+## Queries In Loops
+
+Wrong:
+
+- Fetch a related record, context, or remote payload once per row.
+
+Preferred:
+
+- Preload with `get_in_or_equal()` or a join, aggregate in SQL, and iterate in memory.
+
+## File Sprawl
+
+Wrong:
+
+- Keep appending unrelated functions to `locallib.php` past a thousand lines.
+
+Preferred:
+
+- Split by responsibility into autoloaded classes under `classes/`.
+
+## Contextual Operational UI
+
+Wrong:
+
+- Label date filters only “From/To”, show unlabeled row icons, or add a large information wall.
+
+Preferred:
+
+- Use precise Form API labels/help, accessible icon actions, and a short lead or compact legend only where needed.

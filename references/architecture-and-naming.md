@@ -1,5 +1,7 @@
 # Architecture And Naming
 
+For spaghetti growth, duplicated logic, fat entrypoints, heavy loops, and file sprawl, read [maintainability-and-structure.md](./maintainability-and-structure.md).
+
 ## Follow Moodle Plugin Structure
 
 Inspect the plugin type first and place code where Moodle expects it. Prefer established plugin entrypoints, callbacks, classes, and namespaced locations over dumping logic into a single file.
@@ -69,6 +71,10 @@ Create small functions around a single responsibility. A function should usually
 
 Avoid functions that fetch data, enforce access, mutate records, and render HTML all at once.
 
+Handle invalid input, missing records, and access failures first with guard clauses so the main path stays unnested. Avoid `else` branches that exist only because the failure case was not handled early.
+
+Avoid boolean or mode parameters that make one function behave like several. Prefer explicit named behaviors.
+
 ## Constants
 
 Create constants only for stable repeated values or domain limits that should not be duplicated.
@@ -96,3 +102,9 @@ Avoid:
 - Stateless wrappers around one line of code that add no abstraction value
 
 Prefer domain-specific helpers such as export builders, query builders, capability resolvers, or mappers when those responsibilities are reused.
+
+## File Size And Ownership
+
+Treat a change that pushes a plugin file past roughly a thousand lines as a decomposition signal. Split by responsibility into autoloaded classes under `classes/`, and keep `lib.php` for Moodle callbacks rather than domain logic.
+
+Each domain operation should have one canonical implementation reused by pages, tasks, CLI scripts, and external functions.

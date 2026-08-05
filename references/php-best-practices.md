@@ -17,6 +17,19 @@ If a generic PHP recommendation conflicts with Moodle, prefer Moodle.
 
 Before recommending PHP syntax or refactors, check the target Moodle branch and the PHP versions it supports.
 
+### Working Moodle / PHP Matrix
+
+Use this as a quick agent baseline, then confirm against the plugin docs and [Moodle PHP policy](https://moodledev.io/general/development/policies/php):
+
+| Moodle branch | Typical PHP range | Default caution |
+| --- | --- | --- |
+| 4.1.x | 7.4–8.1 | No enums, `readonly`, attributes, or promotion-first style |
+| 4.4.x / 4.5.x LTS | 8.1–8.3 | Typed PHP OK; gate enums/`readonly`/attributes |
+| 5.0+ | 8.2–8.4 | Modern typed PHP is usually safe if Moodle style still wins |
+| 5.1+ | 8.2–8.4 | Same PHP caution plus platform structure changes (`/public`, Composer) |
+
+For Moodle 5.x platform notes, also read [moodle5-platform.md](./moodle5-platform.md).
+
 Use this rule especially before suggesting:
 
 - Constructor property promotion

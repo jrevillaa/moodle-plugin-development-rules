@@ -1,5 +1,12 @@
 # Events Tasks And Cache
 
+Formal rule companions:
+
+- `rules/async-scheduled-task.md`
+- `rules/async-adhoc-deferred-work.md`
+- `rules/async-events-observers.md`
+- `rules/async-cache-invalidation.md`
+
 ## Use Events And Observers Deliberately
 
 Use Moodle events and observers when behavior should react to domain changes instead of being wired manually into unrelated page flows.
@@ -33,11 +40,13 @@ Prefer:
 
 - Cached derived data that is expensive to compute repeatedly
 - Explicit invalidation tied to the data lifecycle
+- Cache definitions declared in `db/caches.php`
 
 Avoid:
 
 - Caching data with unclear invalidation rules
 - Using cache to hide inefficient queries that should be fixed first
+- Theme or summary caches that never reset after settings or source data change
 
 ## Review Heuristics
 
@@ -45,6 +54,7 @@ Flag the implementation if you see:
 
 - Expensive work performed synchronously in request flow without need
 - Recurrent jobs implemented in page code instead of scheduled tasks
+- One-off deferred work forced into a scheduled task instead of an adhoc task
 - Observer logic used where a direct service call is more correct
 - Cache introduced without invalidation strategy
 

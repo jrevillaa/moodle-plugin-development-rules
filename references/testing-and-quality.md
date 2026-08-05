@@ -21,10 +21,14 @@ Add tests for:
 - Capability boundaries
 - Validation failures
 - Pagination and filtering behavior
+- Inclusive date/time boundaries in a non-UTC user timezone
 - Export behavior
 - Version-sensitive branches
 - Web service contracts
-- Upgrade behaviors when feasible
+- Upgrade behavior from a representative older plugin version
+- Queue producer → task consumer → child/parent final status
+- Retried and overlapping external delivery windows
+- Observable parity when replacing a working legacy flow
 
 ## Use A Scenario Matrix Per Feature
 
@@ -62,8 +66,11 @@ When a feature exposes a web service or AJAX-backed external function, add verif
 - return payload shape
 - read vs write behavior
 - service registration assumptions when relevant
+- idempotency and already-acknowledged retry behavior
 
 If the external endpoint is only lightly tested through manual calls, the coverage is incomplete.
+
+Transport verification should also include a smoke request using consumer-equivalent service/token wiring. Do not place real tokens in fixtures or logs.
 
 ## Use Maintainable Fixtures
 
@@ -88,6 +95,8 @@ Use this lightweight order when designing test coverage for a new feature:
 
 The remediation behavior matters. A good test should check whether the feature rolls back, skips bad rows, aggregates errors, preserves previous state, or tells the user what to fix.
 
+When a rewrite replaces an existing plugin or flow, derive scenario expectations from the reference behavior. Preserve required outcomes such as course format, restored content, retained enrolments, and cleanup semantics.
+
 ## Review Heuristics
 
 Flag the implementation if you see:
@@ -97,6 +106,8 @@ Flag the implementation if you see:
 - UI workflows changed with no Behat coverage where behavior risk is high
 - Complex setup duplicated across tests instead of generators or helpers
 - New feature tests that cover only the successful path and ignore failure scenarios
+- Task-backed workflows tested only at the enqueue or processor layer, not end to end
+- A legacy replacement declared complete without a parity scenario
 
 ## Remediation Language
 

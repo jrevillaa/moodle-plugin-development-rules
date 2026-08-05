@@ -1,7 +1,7 @@
 interface:
   display_name: "Moodle Plugin Dev Rules"
-  short_description: "Audit, modernize, and build Moodle plugins with Moodle-first rules"
+  short_description: "Audit, modernize, and release-gate Moodle plugins with Moodle-first rules"
   icon_small: "./assets/moodle-plugin-rules-small.svg"
   icon_large: "./assets/moodle-plugin-rules-large.svg"
   brand_color: "#F98012"
-  default_prompt: "Use $moodle-plugin-development-rules to audit this Moodle plugin first, classify findings as Critical, Major, or Minor, and then implement the Moodle-native fixes."
+  default_prompt: "Use $moodle-plugin-development-rules to audit or implement this Moodle plugin change, apply Moodle-native fixes, and always finish with a proportionate Release Gate summary marking each check Verified, Not applicable, or Not verified."

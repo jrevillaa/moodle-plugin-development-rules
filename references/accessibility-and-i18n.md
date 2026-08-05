@@ -7,8 +7,10 @@ Treat accessibility as part of correctness for Moodle UI.
 Prefer:
 
 - Clear labels for form controls
+- Form API `addHelpButton()` for field-specific meaning when a short label is not enough
 - Correct table semantics when rendering data tables
-- Meaningful action text and icon usage
+- Meaningful action text and icon usage through Moodle output helpers
+- Compact legends only when several repeated icons or status chips need decoding
 - Keyboard-friendly flows
 - Output structures that remain understandable to assistive technologies
 
@@ -16,6 +18,8 @@ Avoid:
 
 - Clickable elements with unclear text
 - Icon-only actions without accessible meaning
+- Ambiguous “From/To” labels that hide the real Moodle field
+- Large information walls used as a substitute for precise field help
 - Tables used for layout
 - Form controls with weak or missing labels
 

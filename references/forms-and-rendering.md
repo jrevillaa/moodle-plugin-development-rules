@@ -50,6 +50,25 @@ The threshold is pragmatic:
 - Structured or repeated: move it to Mustache and renderer flow.
 - Input handling: use Form API.
 
+## Add Only The Context Users Need
+
+Operational views that are not settings pages should still explain their purpose when it is not self-evident. Keep the primary explanation to one or two short translated sentences.
+
+For ambiguous form controls:
+
+- name the real Moodle concept in the label, such as course start date
+- use `addHelpButton()` for field-specific details and exclusions
+- explain inclusive date behavior where relevant
+- avoid generic labels such as only “From” and “To”
+
+For icon-driven row actions:
+
+- use Moodle output helpers such as `action_icon()`
+- provide an accessible label that names the action and, when useful, the referenced row
+- add a compact legend only when several repeated symbols or states need explanation
+
+Put secondary detail in help popups or a translated `<details>` section. Do not replace missing context with a long inline information wall.
+
 ## Review Heuristics
 
 Flag the implementation if you see:
@@ -58,6 +77,9 @@ Flag the implementation if you see:
 - Complex page sections built inline in PHP
 - Rendering logic mixed with record fetching and mutation
 - Repeated markup without a template
+- Ambiguous filters that do not identify the real Moodle field
+- Icon actions with no accessible action meaning
+- Large information blocks where field help or secondary detail would be clearer
 
 ## Remediation Language
 
@@ -66,3 +88,5 @@ Use wording like:
 - "Replace this hand-built form with a `moodleform` subclass."
 - "Prepare data in PHP and move the markup to a Mustache template."
 - "Introduce a renderer or output object so the page logic stops emitting HTML directly."
+- "Use a precise Form API label and help button to explain that this filter uses `course.startdate`."
+- "Give this row icon an accessible label that explains the action and target."

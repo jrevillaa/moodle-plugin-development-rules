@@ -7,6 +7,20 @@
     "expected_shape": "$PAGE->requires->js_call_amd('local_example/main', 'init', [$itemid]);"
   },
   {
+    "id": "arch-decompose-large-files",
+    "title": "Decompose Files Before They Sprawl",
+    "impact": "MEDIUM",
+    "input": "// locallib.php keeps growing past 1000 lines.\nfunction local_example_get_courses() { /* ... */ }\nfunction local_example_render_table() { /* ... */ }\nfunction local_example_send_report() { /* ... */ }\nfunction local_example_sync_remote() { /* ... */ }\nfunction local_example_build_zip() { /* ... */ }",
+    "expected_shape": "// classes/course_query.php, classes/output/course_table.php,\n// classes/report_mailer.php, classes/remote_sync.php\n$courses = (new \\local_example\\course_query())->get_filtered($filters);\necho $OUTPUT->render(new \\local_example\\output\\course_table($courses));"
+  },
+  {
+    "id": "arch-guard-clauses-over-nesting",
+    "title": "Prefer Guard Clauses Over Deep Conditional Nesting",
+    "impact": "MEDIUM-HIGH",
+    "input": "public function process(int $itemid): string {\n    if ($itemid > 0) {\n        $item = $this->find($itemid);\n        if ($item) {\n            if (has_capability('local/example:manage', $this->context)) {\n                if ($item->status === self::STATUS_QUEUED) {\n                    return $this->run($item);\n                } else {\n                    return get_string('notqueued', 'local_example');\n                }\n            } else {\n                return get_string('nopermission', 'local_example');\n            }\n        } else {\n            return get_string('notfound', 'local_example');\n        }\n    } else {\n        return get_string('invalidid', 'local_example');\n    }\n}",
+    "expected_shape": "public function process(int $itemid): string {\n    require_capability('local/example:manage', $this->context);\n\n    $item = $this->find($itemid);\n    if (!$item) {\n        throw new \\moodle_exception('notfound', 'local_example');\n    }\n\n    if ($item->status !== self::STATUS_QUEUED) {\n        return get_string('notqueued', 'local_example');\n    }\n\n    return $this->run($item);\n}"
+  },
+  {
     "id": "arch-helper-boundaries",
     "title": "Keep Helpers Cohesive and Domain-Specific",
     "impact": "MEDIUM",
@@ -14,11 +28,53 @@
     "expected_shape": "class item_query_helper {\n    public static function get_filtered_items(array $filters): array {\n        // Query-focused responsibility.\n    }\n}"
   },
   {
+    "id": "arch-no-scattered-special-cases",
+    "title": "Do Not Scatter Special Cases Across Shared Moodle Flows",
+    "impact": "HIGH",
+    "input": "function local_example_render_row($record, $mode = null, $isexport = false, $legacy = false) {\n    if ($mode === 'seed' && !$legacy) {\n        $label = get_string('seedrow', 'local_example');\n    } else if ($isexport && $mode !== 'seed') {\n        $label = $record->name;\n    } else if ($legacy) {\n        $label = $record->oldname ?? $record->name;\n    } else {\n        $label = format_string($record->name);\n    }\n\n    return $label;\n}",
+    "expected_shape": "// One owner per behavior, selected explicitly.\n$formatters = [\n    'seed' => new \\local_example\\output\\seed_row_formatter(),\n    'export' => new \\local_example\\output\\export_row_formatter(),\n    'view' => new \\local_example\\output\\view_row_formatter(),\n];\n\n$label = $formatters[$rowtype]->format($record);"
+  },
+  {
     "id": "arch-php-guidance-subordinate-to-moodle",
     "title": "Keep Generic PHP Best Practices Subordinate To Moodle Conventions",
     "impact": "HIGH",
     "input": "class delete_item_service {\n    public function __construct(\n        private request_interface $request,\n        private authorization_interface $authorization,\n        private item_repository_interface $items,\n    ) {}\n\n    public function handle(): void {\n        $id = (int)$this->request->get('id');\n\n        if (!$this->authorization->allows('local/example:manage')) {\n            throw new forbidden_exception();\n        }\n\n        $this->items->delete($id);\n    }\n}",
     "expected_shape": "$id = required_param('id', PARAM_INT);\n$context = context_system::instance();\n\nrequire_login();\nrequire_capability('local/example:manage', $context);\nrequire_sesskey();\n\n$DB->delete_records('local_example_items', ['id' => $id]);"
+  },
+  {
+    "id": "arch-single-canonical-implementation",
+    "title": "Keep One Canonical Implementation Per Domain Operation",
+    "impact": "HIGH",
+    "input": "// classes/task/process_queue.php\n$items = $DB->get_records_select('local_example_items', 'status = 1 AND timequeued < ?', [time() - 60]);\n\n// index.php\n$items = $DB->get_records_select('local_example_items', 'status = 1', []);\n\n// classes/external/get_pending.php\n$items = $DB->get_records('local_example_items', ['status' => 1]);",
+    "expected_shape": "// classes/queue.php owns the query and its rules.\n$items = (new \\local_example\\queue())->get_pending();"
+  },
+  {
+    "id": "arch-thin-entrypoints",
+    "title": "Keep Page Entrypoints Thin And Delegate Domain Work",
+    "impact": "HIGH",
+    "input": "require(__DIR__ . '/../../config.php');\n\n$action = optional_param('action', '', PARAM_ALPHA);\n$context = context_system::instance();\nrequire_login();\n\nif ($action === 'delete') {\n    $ids = required_param_array('ids', PARAM_INT);\n    foreach ($ids as $id) {\n        $record = $DB->get_record('local_example_items', ['id' => $id]);\n        if ($record && $record->status != 3) {\n            $DB->delete_records('local_example_files', ['itemid' => $id]);\n            $DB->set_field('local_example_items', 'status', 3, ['id' => $id]);\n            echo '<div class=\"alert\">Deleted ' . $record->name . '</div>';\n        }\n    }\n}",
+    "expected_shape": "require(__DIR__ . '/../../config.php');\n\n$action = optional_param('action', '', PARAM_ALPHA);\n$context = context_system::instance();\n\nrequire_login();\nrequire_capability('local/example:manage', $context);\n\n$manager = new \\local_example\\item_manager();\n\nif ($action === 'delete') {\n    require_sesskey();\n    $result = $manager->delete_items(required_param_array('ids', PARAM_INT));\n    redirect($returnurl, get_string('itemsdeleted', 'local_example', $result->count));\n}\n\necho $OUTPUT->header();\necho $renderer->render($manager->get_list_view($filters));\necho $OUTPUT->footer();"
+  },
+  {
+    "id": "async-adhoc-deferred-work",
+    "title": "Defer Expensive One-Off Work With Adhoc Tasks",
+    "impact": "MEDIUM",
+    "input": "// Runs synchronously on form submit for every selected course.\nforeach ($courseids as $courseid) {\n    local_example_rebuild_course_index($courseid);\n}",
+    "expected_shape": "foreach ($courseids as $courseid) {\n    $task = new \\local_example\\task\\rebuild_course_index();\n    $task->set_custom_data(['courseid' => $courseid]);\n    \\core\\task\\manager::queue_adhoc_task($task);\n}"
+  },
+  {
+    "id": "async-cache-invalidation",
+    "title": "Define Cache Scope And Invalidation Before Caching",
+    "impact": "MEDIUM",
+    "input": "$cache = \\cache::make('local_example', 'summary');\n$cache->set($courseid, local_example_build_summary($courseid));\n// Writers later update source tables with no purge or set overwrite.",
+    "expected_shape": "$cache = \\cache::make('local_example', 'summary');\n$summary = $cache->get($courseid);\nif ($summary === false) {\n    $summary = local_example_build_summary($courseid);\n    $cache->set($courseid, $summary);\n}\n\n// On mutation:\n$cache->delete($courseid);"
+  },
+  {
+    "id": "async-events-observers",
+    "title": "Use Events And Observers For Cross-Cutting Domain Reactions",
+    "impact": "MEDIUM",
+    "input": "// Called from several pages and an external API independently.\nlocal_example_recalculate_progress($itemid);\nlocal_example_notify_watchers($itemid);",
+    "expected_shape": "$event = \\local_example\\event\\item_updated::create([\n    'context' => $context,\n    'objectid' => $itemid,\n]);\n$event->trigger();\n\n// Observer reacts once for every entrypoint that triggers the event."
   },
   {
     "id": "async-scheduled-task",
@@ -42,6 +98,20 @@
     "expected_shape": "function xmldb_local_example_upgrade($oldversion) {\n    global $DB;\n\n    $dbman = $DB->get_manager();\n\n    if ($oldversion < 2026032300) {\n        $table = new xmldb_table('local_example_items');\n        $field = new xmldb_field('status', XMLDB_TYPE_CHAR, '20', null, null, null, 'draft');\n\n        if (!$dbman->field_exists($table, $field)) {\n            $dbman->add_field($table, $field);\n        }\n\n        upgrade_plugin_savepoint(true, 2026032300, 'local', 'example');\n    }\n\n    return true;\n}"
   },
   {
+    "id": "compat-upgrade-self-contained",
+    "title": "Keep Upgrade Steps Self-Contained And Stable",
+    "impact": "CRITICAL",
+    "input": "if ($oldversion < 2026080500) {\n    \\local_example\\deletion_service::refresh_batch($batchid);\n    set_config('status', \\local_example\\deletion_service::STATUS_DELETED, 'local_example');\n    upgrade_plugin_savepoint(true, 2026080500, 'local', 'example');\n}",
+    "expected_shape": "if ($oldversion < 2026080500) {\n    // Keep the legacy value local to this frozen migration step.\n    $deletedstatus = 3;\n    $DB->set_field('local_example_batch', 'status', $deletedstatus, ['id' => $batchid]);\n    set_config('status', $deletedstatus, 'local_example');\n    upgrade_plugin_savepoint(true, 2026080500, 'local', 'example');\n}"
+  },
+  {
+    "id": "compat-verify-core-contracts",
+    "title": "Verify Moodle APIs And Schema Before Using Them",
+    "impact": "CRITICAL",
+    "input": "$task->set_dayofweek('*');\n\n$records = $DB->get_records_sql(\n    'SELECT s.iprestriction FROM {external_services} s'\n);",
+    "expected_shape": "// Verified against core\\task\\scheduled_task in the target branch.\n$task->set_day_of_week('*');\n\n// Fetch only columns verified in the target branch schema.\n$records = $DB->get_records('external_services', null, 'name ASC', 'id, name, enabled');"
+  },
+  {
     "id": "data-db-api-choice",
     "title": "Choose the Moodle DB API Based on Query Shape",
     "impact": "HIGH",
@@ -49,11 +119,46 @@
     "expected_shape": "$records = $DB->get_records('user', ['deleted' => 0], 'lastname ASC', 'id, firstname, lastname');"
   },
   {
+    "id": "data-inclusive-date-filters",
+    "title": "Translate Inclusive Calendar Dates Into Correct Timestamp Bounds",
+    "impact": "MEDIUM",
+    "input": "$sql = 'course.startdate >= :fromdate AND course.startdate <= :todate';\n// :todate is 2026-08-05 00:00:00, excluding the rest of August 5.",
+    "expected_shape": "$timezone = \\core_date::get_user_timezone_object();\n$endexclusive = (new \\DateTimeImmutable('@' . $todate))\n    ->setTimezone($timezone)\n    ->setTime(0, 0)\n    ->modify('+1 day')\n    ->getTimestamp();\n$sql = 'course.startdate >= :fromdate AND course.startdate < :endexclusive';\n$params = ['fromdate' => usergetmidnight($fromdate), 'endexclusive' => $endexclusive];"
+  },
+  {
+    "id": "data-no-queries-in-loops",
+    "title": "Do Not Run Queries Or Heavy Work Inside Loops",
+    "impact": "HIGH",
+    "input": "foreach ($items as $item) {\n    $course = $DB->get_record('course', ['id' => $item->courseid]);\n    $item->coursename = $course->fullname;\n\n    foreach ($DB->get_records('local_example_log', ['itemid' => $item->id]) as $log) {\n        $item->attempts++;\n    }\n}",
+    "expected_shape": "[$insql, $params] = $DB->get_in_or_equal(array_column($items, 'courseid'), SQL_PARAMS_NAMED);\n\n$coursenames = $DB->get_records_select_menu('course', \"id $insql\", $params, '', 'id, fullname');\n$attempts = $DB->get_records_sql(\n    \"SELECT itemid, COUNT(1) AS attempts\n       FROM {local_example_log}\n      GROUP BY itemid\",\n    []\n);\n\nforeach ($items as $item) {\n    $item->coursename = $coursenames[$item->courseid] ?? '';\n    $item->attempts = $attempts[$item->id]->attempts ?? 0;\n}"
+  },
+  {
     "id": "data-paginated-tables",
     "title": "Assume Report Tables Will Grow",
     "impact": "HIGH",
     "input": "$records = $DB->get_records('local_example_log');\nforeach ($records as $record) {\n    echo html_writer::div(s($record->message));\n}",
     "expected_shape": "$perpage = 25;\n$page = optional_param('page', 0, PARAM_INT);\n$offset = $page * $perpage;\n\n$records = $DB->get_records_sql(\n    \"SELECT id, message, timecreated\n       FROM {local_example_log}\n   ORDER BY timecreated DESC\",\n    [],\n    $offset,\n    $perpage\n);"
+  },
+  {
+    "id": "data-persistence-flow-consistency",
+    "title": "Keep Persistence Contracts Consistent Across The Full Workflow",
+    "impact": "HIGH",
+    "input": "// Producer writes a legacy table name.\n$DB->insert_record('local_bulk_delete_queue', $record);\n\n// Task reads the installed table name, so it never sees the row.\n$queued = $DB->get_records('local_delete_by_date_queue', ['status' => 1]);",
+    "expected_shape": "// Both the enqueue path and task reuse the same queue operation.\n$queue->enqueue($record);\n$queued = $queue->get_pending();"
+  },
+  {
+    "id": "data-status-contract",
+    "title": "Define One Status Contract For Writers Readers And Parent Aggregates",
+    "impact": "HIGH",
+    "input": "// Task considers 2 deleted.\n$DB->set_field('local_example_item', 'status', 2, ['id' => $itemid]);\n\n// Batch aggregation considers only 3 deleted.\n$remaining = $DB->count_records_select('local_example_item', 'batchid = ? AND status <> 3', [$batchid]);",
+    "expected_shape": "$DB->set_field(\n    'local_example_item',\n    'status',\n    deletion_service::STATUS_DELETED,\n    ['id' => $itemid]\n);\n$service->refresh_batch($batchid);"
+  },
+  {
+    "id": "data-status-labels-without-seed-dependency",
+    "title": "Do Not Depend On Seed Rows To Render Stable Status Labels",
+    "impact": "MEDIUM",
+    "input": "$sql = \"SELECT q.*, s.name\n          FROM {local_example_queue} q\n          JOIN {local_example_status} s ON s.id = q.status\";",
+    "expected_shape": "$label = get_string('status' . $record->status, 'local_example');"
   },
   {
     "id": "external-class-based-api",
@@ -70,11 +175,39 @@
     "expected_shape": "namespace local_example\\external;\n\nclass enrol_users extends \\external_api {\n    public static function execute_parameters(): \\external_function_parameters {\n        return new \\external_function_parameters([\n            'courseid' => new \\external_value(PARAM_INT, 'Course id'),\n            'userid' => new \\external_value(PARAM_INT, 'User id'),\n        ]);\n    }\n\n    public static function execute(int $courseid, int $userid): array {\n        $params = self::validate_parameters(self::execute_parameters(), [\n            'courseid' => $courseid,\n            'userid' => $userid,\n        ]);\n\n        $context = \\context_course::instance($params['courseid']);\n        self::validate_context($context);\n        require_capability('local/example:enrol', $context);\n\n        return ['ok' => true];\n    }\n\n    public static function execute_returns(): \\external_single_structure {\n        return new \\external_single_structure([\n            'ok' => new \\external_value(PARAM_BOOL, 'Whether the enrolment completed'),\n        ]);\n    }\n}"
   },
   {
+    "id": "external-http-query-separator",
+    "title": "Use Literal Ampersands When Building Outbound HTTP Query Strings",
+    "impact": "CRITICAL",
+    "input": "// Moodle has set arg_separator.output to '&amp;'.\n$query = http_build_query([\n    'termCode' => $term,\n    'page' => 0,\n    'size' => 100,\n]);\n// Becomes: termCode=202610&amp;page=0&amp;size=100\n$url = $baseurl . '/sections?' . $query;",
+    "expected_shape": "$query = http_build_query(\n    [\n        'termCode' => $term,\n        'page' => 0,\n        'size' => 100,\n    ],\n    '',\n    '&'\n);\n// Becomes: termCode=202610&page=0&size=100\n$url = $baseurl . '/sections?' . $query;"
+  },
+  {
+    "id": "external-idempotent-delivery",
+    "title": "Make Retried External Deliveries Idempotent",
+    "impact": "HIGH",
+    "input": "$records = get_attendance_between($from, $to);\nforeach ($records as $record) {\n    send_to_remote($record);\n}",
+    "expected_shape": "$records = get_pending_attendance_between($from, $to);\nforeach ($records as $record) {\n    $response = send_to_remote($record, $record->deliverykey);\n    if ($response->acknowledged) {\n        mark_delivery_acknowledged($record->id, $response->reference);\n    }\n}"
+  },
+  {
+    "id": "external-service-token-verification",
+    "title": "Verify Service And Token Wiring Before External Release",
+    "impact": "MEDIUM-HIGH",
+    "input": "// Assume this registration automatically updates every existing token.\n$functions = [\n    'local_example_create_items' => [\n        'classname' => '\\local_example\\external\\create_items',\n        'methodname' => 'execute',\n    ],\n];",
+    "expected_shape": "// Register the function, then verify the deployed service/token separately.\n// Run a minimal authenticated request using the same service and user as the consumer.\n$functions = [\n    'local_example_create_items' => [\n        'classname' => '\\local_example\\external\\create_items',\n        'methodname' => 'execute',\n    ],\n];"
+  },
+  {
     "id": "external-write-transaction-safety",
     "title": "Protect Multi-Step External Writes With Transaction And Recovery Design",
     "impact": "HIGH",
     "input": "namespace local_example\\external;\n\nclass import_enrolments extends \\external_api {\n    public static function execute(int $courseid, array $userids): array {\n        global $DB;\n\n        foreach ($userids as $userid) {\n            $DB->insert_record('local_example_queue', [\n                'courseid' => $courseid,\n                'userid' => $userid,\n            ]);\n\n            enrol_try_internal_enrol($courseid, $userid);\n        }\n\n        return ['ok' => true];\n    }\n}",
     "expected_shape": "namespace local_example\\external;\n\nclass import_enrolments extends \\external_api {\n    public static function execute(int $courseid, array $userids): array {\n        global $DB;\n\n        $transaction = $DB->start_delegated_transaction();\n\n        foreach ($userids as $userid) {\n            $DB->insert_record('local_example_queue', [\n                'courseid' => $courseid,\n                'userid' => $userid,\n            ]);\n\n            enrol_try_internal_enrol($courseid, $userid);\n        }\n\n        $transaction->allow_commit();\n\n        return ['ok' => true];\n    }\n}"
+  },
+  {
+    "id": "lifecycle-backup-restore",
+    "title": "Review Backup And Restore When Domain Data Must Travel With The Course",
+    "impact": "MEDIUM-HIGH",
+    "input": "// Activity stores important settings and user attempts in plugin tables,\n// but no backup/restore classes are provided for the module.\n$DB->insert_record('example', [\n    'course' => $courseid,\n    'name' => $name,\n    'intro' => $intro,\n]);",
+    "expected_shape": "// For a mod_* plugin, provide backup and restore steps that include\n// the activity structure and related records that must travel with the course.\nclass backup_example_activity_structure_step extends backup_activity_structure_step {\n    protected function define_structure() {\n        $example = new backup_nested_element('example', ['id'], ['name', 'intro', 'introformat']);\n        $example->set_source_table('example', ['id' => backup::VAR_ACTIVITYID]);\n        return $this->prepare_activity_structure($example);\n    }\n}"
   },
   {
     "id": "lifecycle-file-api",
@@ -105,6 +238,13 @@
     "expected_shape": "$PAGE->set_title(get_string('manageitems', 'local_example'));\necho html_writer::tag('button', get_string('savechanges'));"
   },
   {
+    "id": "quality-reference-parity",
+    "title": "Prove Behavioral Parity When Replacing A Working Legacy Flow",
+    "impact": "HIGH",
+    "input": "// New seed flow creates a course but skips the reference backup/restore settings.\n$childid = create_course($data);",
+    "expected_shape": "// Scenario test derived from the reference behavior.\n$childid = $seedservice->replicate($templateid, $target);\n$child = get_course($childid);\n\n$this->assertSame($template->format, $child->format);\n$this->assert_child_enrolments_preserved($childid);"
+  },
+  {
     "id": "quality-scenario-based-testing",
     "title": "Test Features Against Expected Success And Failure Scenarios",
     "impact": "HIGH",
@@ -126,6 +266,13 @@
     "expected_shape": "$id = required_param('id', PARAM_INT);\n$record = $DB->get_record('local_example_items', ['id' => $id], '*', MUST_EXIST);\n$context = context_system::instance();\n\nrequire_login();\nrequire_capability('local/example:manage', $context);\n\nif (optional_param('delete', 0, PARAM_BOOL)) {\n    require_sesskey();\n    $DB->delete_records('local_example_items', ['id' => $id]);\n}"
   },
   {
+    "id": "ui-contextual-guidance",
+    "title": "Explain Operational Views Filters And Icon Actions In Context",
+    "impact": "MEDIUM",
+    "input": "$mform->addElement('date_selector', 'fromdate', get_string('from'));\n$mform->addElement('date_selector', 'todate', get_string('to'));\necho '<a href=\"' . $runurl . '\"><i class=\"fa fa-play\"></i></a>';",
+    "expected_shape": "$mform->addElement('date_selector', 'fromdate', get_string('coursestartfrom', 'local_example'));\n$mform->addHelpButton('fromdate', 'coursestartfrom', 'local_example');\n\n$mform->addElement('date_selector', 'todate', get_string('coursestartto', 'local_example'));\n$mform->addHelpButton('todate', 'coursestartto', 'local_example');\n\necho $OUTPUT->action_icon(\n    $runurl,\n    new pix_icon('t/play', get_string('runrowtask', 'local_example', $record->name))\n);"
+  },
+  {
     "id": "ui-form-api",
     "title": "Use Form API for Real Input Workflows",
     "impact": "HIGH",
@@ -138,6 +285,13 @@
     "impact": "MEDIUM",
     "input": "$url = '/local/example/view.php?id=' . $id;\necho '<a href=\"' . $url . '\">Open</a>';",
     "expected_shape": "$url = new moodle_url('/local/example/view.php', ['id' => $id]);\necho html_writer::link($url, get_string('open', 'local_example'));"
+  },
+  {
+    "id": "ui-moodle5-theme",
+    "title": "Build Moodle 5.x UI On Boost And Bootstrap 5.3",
+    "impact": "HIGH",
+    "input": "<button class=\"btn btn-primary\" data-toggle=\"modal\" data-target=\"#exampleModal\">\n    Open\n</button>\n<div class=\"text-left ml-3 hidden\">Legacy layout helpers</div>",
+    "expected_shape": "<button class=\"btn btn-primary\" data-bs-toggle=\"modal\" data-bs-target=\"#exampleModal\">\n    {{#str}} open, local_example {{/str}}\n</button>\n<div class=\"text-start ms-3 visually-hidden\">{{#str}} helpertext, local_example {{/str}}</div>"
   },
   {
     "id": "ui-mustache-renderers",

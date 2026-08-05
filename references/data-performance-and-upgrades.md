@@ -26,6 +26,14 @@ When the feature displays tabular data, use Moodle-native table patterns or stru
 
 If the table is likely to grow, treat pagination and sorting as baseline functionality, not future enhancement.
 
+For bulk actions, define selection semantics explicitly:
+
+- current page
+- explicitly selected rows across pages
+- all results matching the validated filters
+
+Do not load the complete matching dataset into PHP merely to preserve selection.
+
 ## Use Moodle DB APIs
 
 Use Moodle database abstractions consistently. Keep SQL explicit, safe, and aligned with Moodle conventions.
@@ -86,15 +94,20 @@ Before implementing a version-sensitive change:
 1. Identify the supported Moodle baseline for the plugin.
 2. Confirm whether the intended API exists on that baseline.
 3. Choose the newest valid structure the supported baseline allows.
+4. For PHP syntax choices, use the matrix in [php-best-practices.md](./php-best-practices.md).
+5. For Moodle 5.x targets, also read [moodle5-platform.md](./moodle5-platform.md).
 
 This matters especially for:
 
 - Hooks and callback availability
 - External API structure
-- Output APIs
+- Output APIs and Bootstrap 5.3 UI assumptions on Moodle 5.x
 - Privacy APIs
 - JavaScript loading conventions
 - Upgrade behavior
+- PHP language features gated by the Moodle/PHP matrix
+
+Before using a core method or operational schema field, inspect the target branch definition or installed schema. A plausible method or column name is not evidence that it exists.
 
 ## Upgrades And Installation Changes
 
@@ -108,6 +121,27 @@ Review whether the change needs:
 - Capability definitions or updates
 - Language string additions
 
+Keep each historical upgrade step self-contained. Use XMLDB, parameterized DML/SQL, literal legacy values, and config APIs. Do not call newly introduced classes from the same plugin because autoload discovery may be stale during upgrade and the class can change later.
+
+Run a representative older-version upgrade through CLI or Notifications before release.
+
+## Validate Multi-Step Persistence Workflows
+
+For queues, batches, imports, and task-backed operations, trace:
+
+1. UI or API entrypoint
+2. row written to a table declared in `db/install.xml`
+3. scheduled/adhoc task read
+4. child status mutation
+5. parent/batch aggregation
+6. real Moodle side effect
+
+Use one documented status contract across writers and readers. Stable labels should come from language strings rather than a mandatory lookup-table join.
+
+## Treat Calendar Dates As User-Facing Ranges
+
+When “To” means the full selected calendar day, translate it to an end-exclusive timestamp for the next local day. Test boundary records in the relevant user timezone.
+
 ## Review Heuristics
 
 Flag the implementation if you see:
@@ -118,6 +152,10 @@ Flag the implementation if you see:
 - Export code bypassing validated filters or capability checks
 - Version-sensitive structure chosen without checking supported Moodle version
 - Schema changes implemented outside upgrade mechanisms
+- Upgrade steps calling classes from the same plugin
+- Core methods or operational SQL fields used without target-branch verification
+- Enqueue and task code using different tables or status meanings
+- Inclusive “To” filters comparing against midnight at the start of the final day
 
 ## Remediation Language
 
@@ -128,3 +166,6 @@ Use wording like:
 - "Use Moodle-native export facilities instead of custom file generation."
 - "Confirm the plugin's supported Moodle version before adopting this API or file layout."
 - "Move schema evolution into Moodle's upgrade path."
+- "Keep this historical upgrade step self-contained instead of calling the plugin's mutable service class."
+- "Trace this queue from the producer row through the task and final aggregate state."
+- "Convert this inclusive calendar range to an end-exclusive timestamp in the user's timezone."

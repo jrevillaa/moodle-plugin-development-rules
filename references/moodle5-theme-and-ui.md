@@ -2,6 +2,8 @@
 
 Use this file when the task involves Moodle 5.x theme work, Boost-based UI customization, SCSS changes, template overrides, renderer changes, or Bootstrap 5 migration concerns.
 
+Formal rule companion: `rules/ui-moodle5-theme.md`. Platform companion: [moodle5-platform.md](./moodle5-platform.md).
+
 ## What Is Worth Preserving From Moodle 5 Theme Guidance
 
 For Moodle 5.x visual work, these points are strong defaults:
@@ -10,6 +12,7 @@ For Moodle 5.x visual work, these points are strong defaults:
 - Prefer SCSS, Mustache templates, renderers, and theme settings over ad hoc markup or CSS patches
 - Keep cache invalidation in mind after theme, template, or SCSS changes
 - Use Moodle's theme file structure and template override paths exactly
+- Keep user-facing text in language strings, including Mustache `{{#str}}` usage
 
 ## Practical Guidance
 
@@ -19,9 +22,10 @@ Do not suggest Bootstrap 4-era markup or utilities for Moodle 5.x work by defaul
 
 Prefer:
 
-- `data-bs-*` attributes
+- `data-bs-*` attributes instead of `data-toggle` / `data-target`
 - logical spacing and alignment utilities such as `.ms-*`, `.me-*`, `.text-start`, and `.text-end`
 - `.visually-hidden` instead of older accessibility helper names
+- Bootstrap 5 modal, collapse, and dropdown patterns already used by Boost
 
 ### Theme Structure
 
@@ -52,6 +56,15 @@ If a theme setting changes SCSS or rendered visual state, remember cache invalid
 
 Override templates through the theme's template path using the correct component name. Do not copy random fragments into PHP output just to adjust visual structure.
 
+For plugin UI that is not a theme plugin, still prefer Mustache + renderer output and Bootstrap 5.3-compatible markup when the target is Moodle 5.x.
+
+### Renderers And Output
+
+- Prepare template data in PHP
+- Keep presentation in Mustache
+- Reuse core/Boost patterns before inventing new layout systems
+- Prefer Moodle pix icons and output helpers over raw icon HTML
+
 ## Review Heuristics
 
 Flag the implementation if you see:
@@ -60,6 +73,7 @@ Flag the implementation if you see:
 - Direct HTML or CSS hacks where a theme template or renderer override is the right abstraction
 - Theme settings added without cache reset behavior when they affect CSS or rendered output
 - Hardcoded strings or icons in templates where Moodle helpers should be used
+- Domain logic pushed into the theme layer
 
 ## Remediation Language
 
@@ -68,3 +82,4 @@ Use wording like:
 - "This Moodle 5 UI change should follow Boost and Bootstrap 5.3 conventions."
 - "Move this structural UI change into a Mustache template or renderer instead of patching echoed HTML."
 - "If this theme setting changes SCSS output, make sure it resets the relevant theme caches."
+- "Replace Bootstrap 4 attributes with `data-bs-*` and Bootstrap 5 utilities."
