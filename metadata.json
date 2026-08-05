@@ -1,12 +1,14 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "organization": "Independent",
   "date": "August 2026",
-  "abstract": "Comprehensive Moodle plugin development, maintainability, and always-on release-safety guide for AI agents and reviewers. Covers Moodle-native architecture, thin entrypoints, guard clauses, spaghetti and duplication control, loop cost, file decomposition, self-contained upgrades, verified core APIs/schema, consistent queue and status workflows, capabilities, forms, contextual operational UI, renderers, Mustache, AMD JavaScript, DB API usage, external API contracts, outbound HTTP query-separator safety, token/service verification, idempotent delivery, events/observers, tasks, cache invalidation, PHP compatibility, Moodle 5.x Boost/Bootstrap 5.3, privacy, files, backup/restore, legacy parity, and scenario-based testing. Agents load SKILL.md plus on-demand rules/references; AGENTS.md remains a generated full catalog, not the default runtime context. Findings are prioritized for audit workflows and completed changes pass a proportionate release gate.",
+  "abstract": "Comprehensive Moodle plugin development, maintainability, and always-on release-safety guide for AI agents and reviewers. Covers Moodle-native architecture, thin entrypoints, guard clauses, spaghetti and duplication control, loop cost, file decomposition, self-contained upgrades, verified core APIs/schema, consistent queue and status workflows, capabilities, forms, admin page setup and breadcrumbs, contextual operational UI, renderers, Mustache, AMD JavaScript, DB API usage, external API contracts, outbound HTTP query-separator safety, token/service verification, idempotent delivery, events/observers, tasks with mtrace progress narration and Moodle-native manual-run output, cache invalidation, PHP compatibility, Moodle 5.x Boost/Bootstrap 5.3, privacy, files, backup/restore, legacy parity, and scenario-based testing. Agents load SKILL.md plus on-demand rules/references; AGENTS.md remains a generated full catalog, not the default runtime context. Findings are prioritized for audit workflows and completed changes pass a proportionate release gate.",
   "references": [
     "https://moodledev.io",
     "https://moodledev.io/docs/apis/core/dml",
     "https://moodledev.io/docs/apis/subsystems/form",
+    "https://moodledev.io/docs/apis/subsystems/admin",
+    "https://moodledev.io/docs/apis/core/navigation",
     "https://moodledev.io/docs/guides/templates",
     "https://moodledev.io/docs/guides/javascript/modules",
     "https://moodledev.io/docs/apis/subsystems/access",

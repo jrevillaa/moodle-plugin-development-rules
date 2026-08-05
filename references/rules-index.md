@@ -1,6 +1,6 @@
 # Rules Index
 
-Generated catalog of 43 formal rules for version 3.0.0.
+Generated catalog of 45 formal rules for version 3.1.0.
 
 Use this index to choose the relevant rule file, then read only that file under `rules/`.
 Do not load `AGENTS.md` by default.
@@ -25,6 +25,7 @@ Do not load `AGENTS.md` by default.
 - [`async-cache-invalidation.md`](../rules/async-cache-invalidation.md) — **Define Cache Scope And Invalidation Before Caching** (MEDIUM — Prevents stale data and cache-driven bugs when derived results are stored)
 - [`async-events-observers.md`](../rules/async-events-observers.md) — **Use Events And Observers For Cross-Cutting Domain Reactions** (MEDIUM — Keeps lifecycle reactions consistent across entrypoints instead of duplicating side effects)
 - [`async-scheduled-task.md`](../rules/async-scheduled-task.md) — **Move Recurrent Heavy Work to Scheduled Tasks** (MEDIUM — Keeps request-time flows responsive and operationally predictable)
+- [`async-task-progress-and-manual-run.md`](../rules/async-task-progress-and-manual-run.md) — **Narrate Task Progress And Never Run Heavy Work As A Silent Spinner** (HIGH — Prevents opaque timeouts and makes multi-step background work diagnosable in cron and manual-run UIs)
 
 ## `compat-`
 
@@ -72,6 +73,7 @@ Do not load `AGENTS.md` by default.
 
 ## `ui-`
 
+- [`ui-admin-setup-and-breadcrumbs.md`](../rules/ui-admin-setup-and-breadcrumbs.md) — **Set Up Admin Pages And Visible Breadcrumbs Correctly** (HIGH — Keeps Site administration navigation working and always orients users with a real breadcrumb path)
 - [`ui-contextual-guidance.md`](../rules/ui-contextual-guidance.md) — **Explain Operational Views Filters And Icon Actions In Context** (MEDIUM — Prevents users from guessing what a view, field, or compact action actually does)
 - [`ui-form-api.md`](../rules/ui-form-api.md) — **Use Form API for Real Input Workflows** (HIGH — Improves validation, maintainability, and Moodle-native behavior)
 - [`ui-moodle-url-output.md`](../rules/ui-moodle-url-output.md) — **Use Moodle URLs and Output Helpers** (MEDIUM — Improves output safety and keeps navigation code Moodle-native)

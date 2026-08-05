@@ -1,6 +1,6 @@
 {
   "name": "moodle-plugin-development-rules",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "private": true,
   "description": "Structured Moodle plugin development rules for agents and LLMs",
   "scripts": {

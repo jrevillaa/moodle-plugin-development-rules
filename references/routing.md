@@ -27,16 +27,16 @@ Use this map after choosing Audit, Fix, Migration, or Theme/UI mode. Release Gat
 ## Security, UI, And Frontend
 
 - Capabilities, context, sesskey, secure requests → [capabilities-and-security.md](./capabilities-and-security.md)
-- Settings, navigation, URLs, icons, escaping → [navigation-settings-and-output.md](./navigation-settings-and-output.md)
+- Settings, navigation, URLs, icons, escaping, admin external pages, breadcrumbs → [navigation-settings-and-output.md](./navigation-settings-and-output.md)
 - Forms, Mustache, renderers, contextual help → [forms-and-rendering.md](./forms-and-rendering.md)
 - AMD and browser behavior → [frontend-and-js.md](./frontend-and-js.md)
-- Formal UI rules: `ui-form-api`, `ui-mustache-renderers`, `ui-moodle-url-output`, `ui-moodle5-theme`, `ui-contextual-guidance`
+- Formal UI rules: `ui-form-api`, `ui-mustache-renderers`, `ui-moodle-url-output`, `ui-moodle5-theme`, `ui-contextual-guidance`, `ui-admin-setup-and-breadcrumbs`
 
 ## Data, Services, And Async
 
 - External APIs and service exposure → [webservices-and-external-api.md](./webservices-and-external-api.md)
 - Events, observers, scheduled/adhoc tasks, cache → [events-tasks-and-cache.md](./events-tasks-and-cache.md)
-- Formal async rules: `async-scheduled-task`, `async-adhoc-deferred-work`, `async-events-observers`, `async-cache-invalidation`
+- Formal async rules: `async-scheduled-task`, `async-adhoc-deferred-work`, `async-task-progress-and-manual-run`, `async-events-observers`, `async-cache-invalidation`
 - Formal data/workflow rules: `data-persistence-flow-consistency`, `data-status-contract`, `data-status-labels-without-seed-dependency`, `data-inclusive-date-filters`
 - Formal delivery rules: `external-idempotent-delivery`, `external-service-token-verification`, `external-http-query-separator`
 

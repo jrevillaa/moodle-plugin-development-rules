@@ -25,6 +25,8 @@ Use this file to classify findings quickly during audit work.
 - DB API choice that clearly mismatches the query shape
 - Heavy recurrent work left in request-time flow
 - One-off expensive work blocking requests instead of an adhoc task
+- Execute / Run buttons that start multi-step or chained remote work behind a silent spinner
+- Background tasks with no stage narration (`mtrace`) across a long pipeline
 - Cache introduced without invalidation
 - Course/activity data missing backup/restore support when the plugin type expects it
 - Moodle 5.x UI still using Bootstrap 4 patterns
@@ -36,6 +38,7 @@ Use this file to classify findings quickly during audit work.
 - Domain logic duplicated across page, task, CLI, and external entrypoints
 - Fat page entrypoints mixing params, queries, mutation, and markup
 - New flags or special-case branches scattered through shared flows
+- Admin custom pages missing `admin_externalpage_setup()` or shared pages without visible real breadcrumbs
 
 ## Usually Minor
 

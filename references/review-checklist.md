@@ -30,6 +30,9 @@ Use this checklist when generating code, reviewing a patch, or preparing feedbac
 ## Navigation Settings And Output
 
 - Are plugin settings implemented through Moodle admin settings where appropriate?
+- Do Site-administration custom screens register `admin_externalpage` and call `admin_externalpage_setup()`?
+- Do shared or course-scoped pages build a visible breadcrumb path instead of relying on admin tabs?
+- Does the breadcrumb show the real parent path for every role that can open the page?
 - Are internal links built with `moodle_url`?
 - Are icons, actions, and notifications using Moodle output helpers?
 - Are output boundaries explicit and safe?
@@ -97,6 +100,8 @@ Use this checklist when generating code, reviewing a patch, or preparing feedbac
 
 - Does the behavior belong in an observer, hook, scheduled task, or adhoc task?
 - Is expensive work removed from request-time flow when possible?
+- Do multi-step or chained remote tasks narrate progress with `mtrace()` at each meaningful stage?
+- Do manual-run actions stream task output and end with a return control instead of a silent spinner?
 - Does any introduced cache have a clear invalidation strategy?
 
 ## Privacy Files And Backup

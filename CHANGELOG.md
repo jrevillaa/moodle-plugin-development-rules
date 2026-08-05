@@ -1,5 +1,23 @@
 # Changelog
 
+## 3.1.0 - August 2026 (development on main)
+
+Added formal coverage for Site administration page setup, mandatory breadcrumbs, and narrated task progress for multi-step runs.
+
+Added:
+
+- `ui-admin-setup-and-breadcrumbs` — admin-only screens must use `admin_externalpage` + `admin_externalpage_setup()`; shared screens must still show a real breadcrumb path because non-admins do not see Site administration tabs
+- `async-task-progress-and-manual-run` — multi-step / chained work (including outbound web-service pipelines) must run in tasks with `mtrace` stage narration; manual Run must stream progress and offer return, like core `tool_task`, never a silent spinner
+
+Changed:
+
+- Navigation, anti-pattern, review, release-gate, triage, routing, and SKILL guidance now treat missing admin setup / missing breadcrumbs as a Major Moodle-native UI failure
+- Events/tasks guidance, checklists, and Release Gate now require progress narration and Moodle-native manual-run output for heavy pipelines
+
+### Formal rule count
+
+45 formal rules.
+
 ## 3.0.0 - August 2026
 
 Major release of the Moodle Plugin Development Rules skill.

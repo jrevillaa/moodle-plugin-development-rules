@@ -122,6 +122,16 @@ Preferred:
 
 - Queue adhoc tasks for deferred one-off work; use scheduled tasks for recurrent jobs.
 
+## Task Progress And Manual Run
+
+Wrong:
+
+- Offer Execute / Run for a chained web-service pipeline and leave the browser spinning with no stage output, or ship a task with no `mtrace` between steps.
+
+Preferred:
+
+- Run the pipeline in a task, narrate each stage with `mtrace()`, and for manual runs stream task output then show a return action like core `tool_task`.
+
 ## Backup And Restore
 
 Wrong:
@@ -251,3 +261,14 @@ Wrong:
 Preferred:
 
 - Use precise Form API labels/help, accessible icon actions, and a short lead or compact legend only where needed.
+
+## Admin Pages And Breadcrumbs
+
+Wrong:
+
+- Ship an admin tool page without `admin_externalpage` registration / `admin_externalpage_setup()`, or leave shared pages without a visible breadcrumb path.
+
+Preferred:
+
+- Admin-only screens: register `admin_externalpage` and call `admin_externalpage_setup()`.
+- Shared screens: set context/URL/layout and build `$PAGE->navbar` with the real path; do not rely on Site administration tabs for non-admin roles.

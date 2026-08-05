@@ -82,11 +82,13 @@ For audit, validation, modernization, or improvement requests, run a compliance 
 - Architecture, hooks, callbacks, tasks, observers, and cache invalidation
 - Structural health: entrypoint thinness, conditional depth, duplicated logic, loop cost, file size
 - Capabilities, context, sesskey, and request security
+- Admin page setup (`admin_externalpage_setup`) and visible real breadcrumbs for admin and shared pages
 - Form API, Mustache, renderers, AMD, and Moodle 5 UI/theme patterns when relevant
 - DB API choice, pagination, filtering, exports, and upgrades
 - Upgrade self-containment plus verification of core methods and installed schema
 - Persistence flow consistency across UI/API → database → task → final state
 - External API contracts, outbound HTTP query separators, idempotency, service exposure, and token/service wiring
+- Task progress narration (`mtrace`) and manual-run output views for multi-step or chained work
 - Privacy, files, backup/restore, and tests for success plus failure scenarios
 - Contextual guidance for ambiguous filters, icon actions, exclusions, and destructive operations
 
@@ -153,6 +155,8 @@ Read [routing.md](./references/routing.md) for the full map. Minimum routes:
 - Make retried external deliveries idempotent and verify real service/token access before handoff.
 - For outbound HTTP query strings, call `http_build_query($params, '', '&')`; never send Moodle's HTML `&amp;` separator to an API.
 - Give operational views concise contextual help for ambiguous fields and icon actions; avoid information walls.
+- For Site-administration custom screens, register `admin_externalpage` and call `admin_externalpage_setup()`; for shared pages, always show a real breadcrumb path because non-admins will not see admin tabs.
+- For multi-step or chained background work, narrate progress with `mtrace()` and never expose Execute / Run as a silent spinner; manual runs should stream output and offer return, like core `tool_task`.
 - Cover non-trivial behavior with success and failure scenarios.
 - Always finish with a proportionate Release Gate; never claim release readiness for checks that were not actually run.
 
@@ -180,6 +184,9 @@ Concrete remediation examples:
 - "Extract one canonical operation instead of duplicating this query per entrypoint."
 - "Preload these records in one query instead of querying inside the loop."
 - "Pass `'&'` to `http_build_query()` so the outbound API URL does not contain `&amp;`."
+- "Register this admin screen with `admin_externalpage` and call `admin_externalpage_setup()`."
+- "Build a visible breadcrumb path; non-admins will not see Site administration tabs."
+- "Add `mtrace` at each remote step and replace the silent spinner with a streamed task-output view plus return."
 
 ## References
 

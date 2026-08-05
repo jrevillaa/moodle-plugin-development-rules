@@ -84,6 +84,13 @@
     "expected_shape": "namespace local_example\\task;\n\nclass sync_records extends \\core\\task\\scheduled_task {\n    public function get_name() {\n        return get_string('tasksyncrecords', 'local_example');\n    }\n\n    public function execute() {\n        local_example_sync_all_records();\n    }\n}"
   },
   {
+    "id": "async-task-progress-and-manual-run",
+    "title": "Narrate Task Progress And Never Run Heavy Work As A Silent Spinner",
+    "impact": "HIGH",
+    "input": "// Plugin page: button runs the whole chain in the same request.\nif (optional_param('run', 0, PARAM_BOOL)) {\n    require_sesskey();\n    $terms = $client->get_terms();\n    foreach ($terms as $term) {\n        $sections = $client->get_sections($term->code); // Builds next URL from prior response.\n        foreach ($sections as $section) {\n            $client->sync_section($section);\n        }\n    }\n    redirect($returnurl, get_string('done', 'local_example'));\n}",
+    "expected_shape": "// classes/task/sync_banner.php — narrate every meaningful step for cron and manual run.\npublic function execute() {\n    mtrace('Banner sync started');\n\n    $terms = $this->client->get_terms();\n    mtrace('Fetched ' . count($terms) . ' active terms');\n\n    foreach ($terms as $term) {\n        mtrace('Syncing term ' . $term->code);\n        $sections = $this->client->get_sections($term->code);\n        mtrace('  term ' . $term->code . ': ' . count($sections) . ' sections');\n\n        foreach ($sections as $section) {\n            $this->client->sync_section($section);\n            mtrace('  synced section ' . $section->crn);\n        }\n    }\n\n    mtrace('Banner sync finished');\n}\n\n// Manual-run page: open the page first, stream task output, then offer return.\necho $OUTPUT->header();\necho html_writer::start_tag('pre', ['class' => 'task-output']);\n\\core\\task\\manager::run_from_cli($task); // Task mtrace lines appear live, as in tool_task.\necho html_writer::end_tag('pre');\necho $OUTPUT->single_button($returnurl, get_string('back'));\necho $OUTPUT->footer();"
+  },
+  {
     "id": "compat-php-version-gating",
     "title": "Gate PHP Modernization By Moodle And PHP Support Matrix",
     "impact": "CRITICAL",
@@ -264,6 +271,13 @@
     "impact": "CRITICAL",
     "input": "$id = required_param('id', PARAM_INT);\n$record = $DB->get_record('local_example_items', ['id' => $id], '*', MUST_EXIST);\n\nif (optional_param('delete', 0, PARAM_BOOL)) {\n    $DB->delete_records('local_example_items', ['id' => $id]);\n}",
     "expected_shape": "$id = required_param('id', PARAM_INT);\n$record = $DB->get_record('local_example_items', ['id' => $id], '*', MUST_EXIST);\n$context = context_system::instance();\n\nrequire_login();\nrequire_capability('local/example:manage', $context);\n\nif (optional_param('delete', 0, PARAM_BOOL)) {\n    require_sesskey();\n    $DB->delete_records('local_example_items', ['id' => $id]);\n}"
+  },
+  {
+    "id": "ui-admin-setup-and-breadcrumbs",
+    "title": "Set Up Admin Pages And Visible Breadcrumbs Correctly",
+    "impact": "HIGH",
+    "input": "// Admin tool page with no externalpage registration/setup and no navbar path.\nrequire(__DIR__ . '/../../config.php');\nrequire_login();\n$context = context_system::instance();\nrequire_capability('local/example:manage', $context);\n\n$PAGE->set_context($context);\n$PAGE->set_url(new moodle_url('/local/example/manage.php'));\n$PAGE->set_title(get_string('manage', 'local_example'));\n\necho $OUTPUT->header();\n// Content...\necho $OUTPUT->footer();",
+    "expected_shape": "// settings.php — Site administration registration\n$ADMIN->add(\n    'localplugins',\n    new admin_externalpage(\n        'local_example_manage',\n        get_string('manage', 'local_example'),\n        new moodle_url('/local/example/manage.php'),\n        'local/example:manage'\n    )\n);\n\n// manage.php — admin-only page\nrequire(__DIR__ . '/../../config.php');\nrequire_once($CFG->libdir . '/adminlib.php');\nadmin_externalpage_setup('local_example_manage');\n\necho $OUTPUT->header();\n// Content...\necho $OUTPUT->footer();\n\n// report.php — shared page other roles can open\n$courseid = required_param('courseid', PARAM_INT);\n$course = get_course($courseid);\n$context = context_course::instance($course->id);\n\nrequire_login($course);\nrequire_capability('local/example:view', $context);\n\n$url = new moodle_url('/local/example/report.php', ['courseid' => $course->id]);\n$PAGE->set_url($url);\n$PAGE->set_context($context);\n$PAGE->set_pagelayout('report');\n$PAGE->set_title(get_string('report', 'local_example'));\n$PAGE->set_heading(format_string($course->fullname));\n\n// Non-admins will not see Site administration tabs. Breadcrumbs must still show the real path.\n$PAGE->navbar->add(get_string('report', 'local_example'), $url);\n\necho $OUTPUT->header();\n// Content...\necho $OUTPUT->footer();"
   },
   {
     "id": "ui-contextual-guidance",

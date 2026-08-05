@@ -1,6 +1,6 @@
 # Moodle Plugin Development Rules
 
-**Version 3.0.0**  
+**Version 3.1.0**  
 Independent  
 August 2026
 
@@ -13,7 +13,7 @@ August 2026
 
 ## Abstract
 
-Comprehensive Moodle plugin development, maintainability, and always-on release-safety guide for AI agents and reviewers. Covers Moodle-native architecture, thin entrypoints, guard clauses, spaghetti and duplication control, loop cost, file decomposition, self-contained upgrades, verified core APIs/schema, consistent queue and status workflows, capabilities, forms, contextual operational UI, renderers, Mustache, AMD JavaScript, DB API usage, external API contracts, outbound HTTP query-separator safety, token/service verification, idempotent delivery, events/observers, tasks, cache invalidation, PHP compatibility, Moodle 5.x Boost/Bootstrap 5.3, privacy, files, backup/restore, legacy parity, and scenario-based testing. Agents load SKILL.md plus on-demand rules/references; AGENTS.md remains a generated full catalog, not the default runtime context. Findings are prioritized for audit workflows and completed changes pass a proportionate release gate.
+Comprehensive Moodle plugin development, maintainability, and always-on release-safety guide for AI agents and reviewers. Covers Moodle-native architecture, thin entrypoints, guard clauses, spaghetti and duplication control, loop cost, file decomposition, self-contained upgrades, verified core APIs/schema, consistent queue and status workflows, capabilities, forms, admin page setup and breadcrumbs, contextual operational UI, renderers, Mustache, AMD JavaScript, DB API usage, external API contracts, outbound HTTP query-separator safety, token/service verification, idempotent delivery, events/observers, tasks with mtrace progress narration and Moodle-native manual-run output, cache invalidation, PHP compatibility, Moodle 5.x Boost/Bootstrap 5.3, privacy, files, backup/restore, legacy parity, and scenario-based testing. Agents load SKILL.md plus on-demand rules/references; AGENTS.md remains a generated full catalog, not the default runtime context. Findings are prioritized for audit workflows and completed changes pass a proportionate release gate.
 
 ---
 
@@ -31,6 +31,7 @@ Comprehensive Moodle plugin development, maintainability, and always-on release-
 - `async-cache-invalidation.md` - Define Cache Scope And Invalidation Before Caching
 - `async-events-observers.md` - Use Events And Observers For Cross-Cutting Domain Reactions
 - `async-scheduled-task.md` - Move Recurrent Heavy Work to Scheduled Tasks
+- `async-task-progress-and-manual-run.md` - Narrate Task Progress And Never Run Heavy Work As A Silent Spinner
 - `compat-php-version-gating.md` - Gate PHP Modernization By Moodle And PHP Support Matrix
 - `compat-upgrade-path.md` - Route Persistent Changes Through Moodle Upgrades
 - `compat-upgrade-self-contained.md` - Keep Upgrade Steps Self-Contained And Stable
@@ -57,6 +58,7 @@ Comprehensive Moodle plugin development, maintainability, and always-on release-
 - `quality-scenario-based-testing.md` - Test Features Against Expected Success And Failure Scenarios
 - `quality-testing-coverage.md` - Add Automated Coverage for Non-Trivial Behavior
 - `security-capability-checks.md` - Resolve Context and Enforce Capabilities Early
+- `ui-admin-setup-and-breadcrumbs.md` - Set Up Admin Pages And Visible Breadcrumbs Correctly
 - `ui-contextual-guidance.md` - Explain Operational Views Filters And Icon Actions In Context
 - `ui-form-api.md` - Use Form API for Real Input Workflows
 - `ui-moodle-url-output.md` - Use Moodle URLs and Output Helpers
@@ -671,6 +673,84 @@ Recommended remediation:
 - Keep page requests focused on user interaction
 
 Reference: [Moodle Developer Documentation](https://moodledev.io)
+
+### Narrate Task Progress And Never Run Heavy Work As A Silent Spinner
+
+**Impact:** HIGH (Prevents opaque timeouts and makes multi-step background work diagnosable in cron and manual-run UIs)
+
+## Narrate Task Progress And Never Run Heavy Work As A Silent Spinner
+
+**Impact: HIGH (prevents opaque timeouts and makes multi-step background work diagnosable in cron and manual-run UIs)**
+
+Do not offer an Execute / Run button that starts multi-step or chained work—especially outbound web-service chains that assemble the next call from the previous response—and then leave the browser spinning with no progress. Put that work in a scheduled or adhoc task, narrate each meaningful step with `mtrace()`, and for manual runs use a Moodle-native progress/log view that streams output and ends with a return action, the same way core `tool_task` does when an admin forces a scheduled task.
+
+Wrong:
+
+```php
+// Plugin page: button runs the whole chain in the same request.
+if (optional_param('run', 0, PARAM_BOOL)) {
+    require_sesskey();
+    $terms = $client->get_terms();
+    foreach ($terms as $term) {
+        $sections = $client->get_sections($term->code); // Builds next URL from prior response.
+        foreach ($sections as $section) {
+            $client->sync_section($section);
+        }
+    }
+    redirect($returnurl, get_string('done', 'local_example'));
+}
+```
+
+Preferred:
+
+```php
+// classes/task/sync_banner.php — narrate every meaningful step for cron and manual run.
+public function execute() {
+    mtrace('Banner sync started');
+
+    $terms = $this->client->get_terms();
+    mtrace('Fetched ' . count($terms) . ' active terms');
+
+    foreach ($terms as $term) {
+        mtrace('Syncing term ' . $term->code);
+        $sections = $this->client->get_sections($term->code);
+        mtrace('  term ' . $term->code . ': ' . count($sections) . ' sections');
+
+        foreach ($sections as $section) {
+            $this->client->sync_section($section);
+            mtrace('  synced section ' . $section->crn);
+        }
+    }
+
+    mtrace('Banner sync finished');
+}
+
+// Manual-run page: open the page first, stream task output, then offer return.
+echo $OUTPUT->header();
+echo html_writer::start_tag('pre', ['class' => 'task-output']);
+\core\task\manager::run_from_cli($task); // Task mtrace lines appear live, as in tool_task.
+echo html_writer::end_tag('pre');
+echo $OUTPUT->single_button($returnurl, get_string('back'));
+echo $OUTPUT->footer();
+```
+
+Why it matters:
+
+- Chained remote calls and multi-step syncs routinely exceed request timeouts when run behind a silent spinner
+- Without step narration, cron and operators cannot tell whether failure was auth, term fetch, section paging, or a later write
+- Moodle's own “Run now” UI for scheduled tasks streams `mtrace` output and then offers a way back; plugin manual runs should match that expectation
+- A finished “Back/Return” control reorients the operator to the button page or task log instead of leaving them on a dead loading state
+
+Recommended remediation:
+
+- Move multi-step, chained, or remote-heavy work into scheduled or adhoc tasks instead of the button request
+- Call `mtrace()` (or `mtrace_exception()` on caught failures) at each meaningful stage: start, each remote hop, counts, skips, and finish
+- Persist enough status/watermark state so a failure mid-chain is recoverable and the log shows where it stopped
+- For “run manually”, render the page first, stream progress through Moodle task/`mtrace` output (or an equivalent `progress_trace` view), then show a return action to the originating view or log
+- Never leave the browser on an empty spinner while the full pipeline completes with no intermediate output
+- Prefer queueing and letting cron run when the operator does not need an interactive stream; still keep `mtrace` so scheduled-task logs narrate progress
+
+Reference: [Task API](https://moodledev.io/docs/apis/subsystems/task)
 
 ### Gate PHP Modernization By Moodle And PHP Support Matrix
 
@@ -1962,6 +2042,97 @@ Recommended remediation:
 
 Reference: [Access API](https://moodledev.io/docs/apis/subsystems/access)
 
+### Set Up Admin Pages And Visible Breadcrumbs Correctly
+
+**Impact:** HIGH (Keeps Site administration navigation working and always orients users with a real breadcrumb path)
+
+## Set Up Admin Pages And Visible Breadcrumbs Correctly
+
+**Impact: HIGH (keeps Site administration navigation working and always orients users with a real breadcrumb path)**
+
+Decide whether a page is Site-administration-only or also reachable by other roles. Admin-only screens must register an `admin_externalpage` and call `admin_externalpage_setup()`. Every page—admin or shared—must show breadcrumbs that reflect the real navigation path. Non-admin roles will not see Site administration tabs; breadcrumbs are their orientation.
+
+Wrong:
+
+```php
+// Admin tool page with no externalpage registration/setup and no navbar path.
+require(__DIR__ . '/../../config.php');
+require_login();
+$context = context_system::instance();
+require_capability('local/example:manage', $context);
+
+$PAGE->set_context($context);
+$PAGE->set_url(new moodle_url('/local/example/manage.php'));
+$PAGE->set_title(get_string('manage', 'local_example'));
+
+echo $OUTPUT->header();
+// Content...
+echo $OUTPUT->footer();
+```
+
+Preferred:
+
+```php
+// settings.php — Site administration registration
+$ADMIN->add(
+    'localplugins',
+    new admin_externalpage(
+        'local_example_manage',
+        get_string('manage', 'local_example'),
+        new moodle_url('/local/example/manage.php'),
+        'local/example:manage'
+    )
+);
+
+// manage.php — admin-only page
+require(__DIR__ . '/../../config.php');
+require_once($CFG->libdir . '/adminlib.php');
+admin_externalpage_setup('local_example_manage');
+
+echo $OUTPUT->header();
+// Content...
+echo $OUTPUT->footer();
+
+// report.php — shared page other roles can open
+$courseid = required_param('courseid', PARAM_INT);
+$course = get_course($courseid);
+$context = context_course::instance($course->id);
+
+require_login($course);
+require_capability('local/example:view', $context);
+
+$url = new moodle_url('/local/example/report.php', ['courseid' => $course->id]);
+$PAGE->set_url($url);
+$PAGE->set_context($context);
+$PAGE->set_pagelayout('report');
+$PAGE->set_title(get_string('report', 'local_example'));
+$PAGE->set_heading(format_string($course->fullname));
+
+// Non-admins will not see Site administration tabs. Breadcrumbs must still show the real path.
+$PAGE->navbar->add(get_string('report', 'local_example'), $url);
+
+echo $OUTPUT->header();
+// Content...
+echo $OUTPUT->footer();
+```
+
+Why it matters:
+
+- `admin_externalpage_setup()` wires the page into the admin tree so Site administration navigation, active section, and admin breadcrumbs work
+- Registration URL and `$PAGE->set_url()` must match the canonical page URL or the admin breadcrumb never activates
+- Managers, teachers, and other roles do not see Site administration tabs; without visible breadcrumbs they lose the path back to the parent context
+- Breadcrumbs are part of Moodle orientation, not an optional decoration
+
+Recommended remediation:
+
+- For admin-only screens: add `admin_externalpage` in `settings.php`, call `admin_externalpage_setup($pagename)` early, then use normal `$OUTPUT->header()` / `footer()`
+- Prefer standard `admin_settingpage` settings when the screen is only config fields in `config_plugins`; use `admin_externalpage` for custom operational screens
+- For shared or course-scoped screens: do not pretend they are Site administration pages; set context/layout/URL and build `$PAGE->navbar` (or navigation nodes) with the real parent path
+- Keep breadcrumbs visible and accurate for every role that can open the page
+- Never rely on admin secondary navigation to orient users who cannot see it
+
+Reference: [Admin settings](https://moodledev.io/docs/apis/subsystems/admin), [Navigation API](https://moodledev.io/docs/apis/core/navigation)
+
 ### Explain Operational Views Filters And Icon Actions In Context
 
 **Impact:** MEDIUM (Prevents users from guessing what a view, field, or compact action actually does)
@@ -2189,6 +2360,8 @@ Reference: [Templates Guide](https://moodledev.io/docs/guides/templates)
 - https://moodledev.io
 - https://moodledev.io/docs/apis/core/dml
 - https://moodledev.io/docs/apis/subsystems/form
+- https://moodledev.io/docs/apis/subsystems/admin
+- https://moodledev.io/docs/apis/core/navigation
 - https://moodledev.io/docs/guides/templates
 - https://moodledev.io/docs/guides/javascript/modules
 - https://moodledev.io/docs/apis/subsystems/access

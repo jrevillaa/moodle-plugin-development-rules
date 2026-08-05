@@ -31,17 +31,22 @@ If you want an AI coding agent to review or write Moodle plugin code without inv
 
 It gives the agent a Moodle-native rule system, a review workflow, reference notes, and concrete remediation patterns so the output is closer to what an experienced Moodle maintainer would expect.
 
+## Version 3.1
+
+Version `3.1.0` is in development on `main`. It adds formal rules for Site administration page setup (`admin_externalpage` / `admin_externalpage_setup`), mandatory visible breadcrumbs on admin and shared pages, and narrated task progress / Moodle-native manual-run output for multi-step and chained background work.
+
 ## Version 3.0
 
-Version `3.0.0` is the current stable major release.
+Version `3.0.0` is the current stable major release on `v3.0-stable`.
 
 It combines Moodle-first implementation rules, always-on release safety, Moodle 5.x knowledge, strict maintainability standards, and cheap agent context loading.
 
 See [BRANCHING.md](./BRANCHING.md) for the Moodle-inspired branch/tag/release model:
 
 - `main` for active development
+- `v3.1-stable` for the installable 3.1 line
 - `v3.0-stable` for the installable 3.0 line
-- `v3.0.0` tags and GitHub Releases for published installs
+- `v3.1.0` / `v3.0.0` tags and GitHub Releases for published installs
 
 ## Version 2.4
 

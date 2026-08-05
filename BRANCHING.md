@@ -9,6 +9,7 @@ This repository follows a Moodle-inspired branching model.
 | `main` | Active development. May contain unfinished work that is not yet a released install target. |
 | `v2.0-stable` | Stable line for the 2.0.x release series |
 | `v3.0-stable` | Stable line for the 3.0.x release series |
+| `v3.1-stable` | Stable line for the 3.1.x release series |
 
 When a new major or minor line is released:
 

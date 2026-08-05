@@ -17,7 +17,7 @@ This file defines the main rule sections, their ordering, impact levels, and pre
 ## 3. Forms, Rendering, Moodle 5 UI, and Output Structure (ui)
 
 **Impact:** HIGH  
-**Description:** Using Form API, Mustache, renderers, concise contextual operational help, and Moodle 5.x Boost/Bootstrap 5.3 patterns correctly is core to maintainable and Moodle-native UI implementation.
+**Description:** Using Form API, Mustache, renderers, admin page setup and breadcrumbs, concise contextual operational help, and Moodle 5.x Boost/Bootstrap 5.3 patterns correctly is core to maintainable and Moodle-native UI implementation.
 
 ## 4. JavaScript and Frontend Behavior (amd)
 
@@ -37,7 +37,7 @@ This file defines the main rule sections, their ordering, impact levels, and pre
 ## 7. Events, Tasks, Cache, and Async Work (async)
 
 **Impact:** MEDIUM  
-**Description:** Observers, scheduled/adhoc tasks, and cache should be introduced deliberately, with clear responsibility boundaries and invalidation.
+**Description:** Observers, scheduled/adhoc tasks, progress narration for multi-step runs, and cache should be introduced deliberately, with clear responsibility boundaries and invalidation.
 
 ## 8. Privacy, Files, and Backup/Restore (lifecycle)
 

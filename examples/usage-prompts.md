@@ -6,8 +6,9 @@ Use prompts like these to demonstrate or test the skill. The skill is agent-agno
 
 - `Use $moodle-plugin-development-rules to audit this Moodle plugin and classify every finding as Critical, Major, or Minor.`
 - `Use $moodle-plugin-development-rules to review this report plugin for scalability, DB API correctness, exports, and access control.`
-- `Use $moodle-plugin-development-rules to validate whether this admin tool follows Moodle-native patterns for forms, rendering, capabilities, and tasks.`
+- `Use $moodle-plugin-development-rules to validate whether this admin tool follows Moodle-native patterns for forms, rendering, capabilities, admin_externalpage_setup, breadcrumbs, and tasks.`
 - `Use $moodle-plugin-development-rules to audit this mod_* plugin for backup/restore, privacy, events, and capability coverage.`
+- `Use $moodle-plugin-development-rules to check whether admin and shared pages show real breadcrumbs for every role that can open them.`
 
 ## Refactor Prompts
 
@@ -22,6 +23,7 @@ Use prompts like these to demonstrate or test the skill. The skill is agent-agno
 - `Use $moodle-plugin-development-rules to check whether this plugin introduces Privacy API, File API, or backup/restore obligations.`
 - `Use $moodle-plugin-development-rules to review this plugin for missing tests, weak helper boundaries, and hardcoded strings.`
 - `Use $moodle-plugin-development-rules to review whether this heavy follow-up work should be an adhoc task, scheduled task, or observer.`
+- `Use $moodle-plugin-development-rules to review this Execute/Run action for mtrace stage narration and a streamed manual-run output view with return, not a silent spinner.`
 - `Use $moodle-plugin-development-rules to check this cache usage for definition scope and invalidation on write.`
 - `Use $moodle-plugin-development-rules to review this queue workflow for table consistency, status contracts, and inclusive date filters.`
 - `Use $moodle-plugin-development-rules to review this operational page for concise contextual help: view lead, Form API field help, and accessible icon actions.`

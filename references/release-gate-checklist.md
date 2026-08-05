@@ -65,10 +65,14 @@ For a replacement of a legacy flow, compare observable behavior with the referen
 ## 6. Security And Admin Operations
 
 - Every admin page resolves context and enforces the plugin capability
+- Site-administration custom screens use `admin_externalpage` + `admin_externalpage_setup()`
+- Shared pages accessible to non-admin roles show a real breadcrumb path; they do not depend on Site administration tabs
 - Every state-changing action validates sesskey
 - UI visibility is not used as authorization
 - Destructive actions confirm intent, identify the affected count, and explain irreversibility
 - Progress and error states reflect persisted workflow state rather than cosmetic labels
+- Multi-step / chained background work emits `mtrace` (or equivalent) stage markers in task logs
+- Manual-run actions stream progress and offer a return control; they do not leave a silent spinner through the full pipeline
 
 ## 7. Contextual UX
 
@@ -76,6 +80,7 @@ For a replacement of a legacy flow, compare observable behavior with the referen
 - Ambiguous controls explain the real Moodle field, for example `course.startdate`
 - Field-specific details use Form API labels/help buttons where possible
 - Important exclusions and boundaries are explicit (`SITEID`, unset start date, inclusive end date)
+- Breadcrumbs are visible and reflect the real navigation path for the current page
 - Icon actions use Moodle output helpers with accessible action labels
 - Repeated icons or status chips have a compact legend only when needed
 - Secondary explanation is placed in help or `<details>`, not a large inline information wall
