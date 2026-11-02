@@ -272,3 +272,53 @@ Preferred:
 
 - Admin-only screens: register `admin_externalpage` and call `admin_externalpage_setup()`.
 - Shared screens: set context/URL/layout and build `$PAGE->navbar` with the real path; do not rely on Site administration tabs for non-admin roles.
+
+## Invented DB Helper Arguments
+
+Wrong:
+
+- Pass a sort string into `get_record_select()` or invent parameters that the helper does not accept.
+
+Preferred:
+
+- Verify the signature in core DML. Use `get_record_sql()` / `get_records()` when you need `ORDER BY`.
+
+## Legacy Libs And Namespaced Constants
+
+Wrong:
+
+- Extend `table_sql` or use `ASSIGN_*` / similar constants from a namespace without `require_once` and a leading `\`.
+
+Preferred:
+
+- Include `tablelib.php` / the owning `locallib.php` before use, and reference global constants as `\CONST_NAME`.
+
+## CLI Or Seed Activity Creation
+
+Wrong:
+
+- Call `add_moduleinfo()` with only the fields a human would type in the form, leaving `NOT NULL` columns unset.
+
+Preferred:
+
+- Set every required module default explicitly (`0`, `''`, format constants, attempt reopen method, editor fields) before insert.
+
+## Empty Timestamps In UI
+
+Wrong:
+
+- Pass `0` / empty “last run” config straight into `userdate()`.
+
+Preferred:
+
+- Guard `<= 0` and show a “never” / empty-state string instead of the Unix epoch.
+
+## Plugin Surrogate Keys Versus Moodle Foreign Keys
+
+Wrong:
+
+- Treat a plugin table autoincrement as a Moodle `course.id`, `user.id`, or `cm.id` when joining or creating related records.
+
+Preferred:
+
+- Persist and use the real Moodle foreign key alongside any plugin-local id; never assume sequential plugin ids match core ids.

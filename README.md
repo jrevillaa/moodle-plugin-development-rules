@@ -33,7 +33,7 @@ It gives the agent a Moodle-native rule system, a review workflow, reference not
 
 ## Version 3.1
 
-Version `3.1.0` is in development on `main`. It adds formal rules for Site administration page setup (`admin_externalpage` / `admin_externalpage_setup`), mandatory visible breadcrumbs on admin and shared pages, and narrated task progress / Moodle-native manual-run output for multi-step and chained background work.
+Version `3.1.1` is the current patch on the 3.1 line (`v3.1-stable`). It keeps the 3.1.0 admin setup, breadcrumbs, and narrated task-progress rules, and adds general traps for verified `$DB` helper signatures, legacy libs/constants from namespaced code, explicit defaults when creating activities outside Form API, and guarded empty timestamps before `userdate()`.
 
 ## Version 3.0
 

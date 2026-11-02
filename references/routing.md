@@ -30,14 +30,15 @@ Use this map after choosing Audit, Fix, Migration, or Theme/UI mode. Release Gat
 - Settings, navigation, URLs, icons, escaping, admin external pages, breadcrumbs → [navigation-settings-and-output.md](./navigation-settings-and-output.md)
 - Forms, Mustache, renderers, contextual help → [forms-and-rendering.md](./forms-and-rendering.md)
 - AMD and browser behavior → [frontend-and-js.md](./frontend-and-js.md)
-- Formal UI rules: `ui-form-api`, `ui-mustache-renderers`, `ui-moodle-url-output`, `ui-moodle5-theme`, `ui-contextual-guidance`, `ui-admin-setup-and-breadcrumbs`
+- Formal UI rules: `ui-form-api`, `ui-mustache-renderers`, `ui-moodle-url-output`, `ui-moodle5-theme`, `ui-contextual-guidance`, `ui-admin-setup-and-breadcrumbs`, `ui-guard-empty-timestamps`
 
 ## Data, Services, And Async
 
 - External APIs and service exposure → [webservices-and-external-api.md](./webservices-and-external-api.md)
 - Events, observers, scheduled/adhoc tasks, cache → [events-tasks-and-cache.md](./events-tasks-and-cache.md)
 - Formal async rules: `async-scheduled-task`, `async-adhoc-deferred-work`, `async-task-progress-and-manual-run`, `async-events-observers`, `async-cache-invalidation`
-- Formal data/workflow rules: `data-persistence-flow-consistency`, `data-status-contract`, `data-status-labels-without-seed-dependency`, `data-inclusive-date-filters`
+- Formal data/workflow rules: `data-db-api-choice`, `data-cli-module-creation-defaults`, `data-persistence-flow-consistency`, `data-status-contract`, `data-status-labels-without-seed-dependency`, `data-inclusive-date-filters`
+- Formal compatibility traps: `compat-verify-core-contracts`, `compat-db-api-signatures`, `compat-require-legacy-symbols`
 - Formal delivery rules: `external-idempotent-delivery`, `external-service-token-verification`, `external-http-query-separator`
 
 ## Lifecycle And Quality

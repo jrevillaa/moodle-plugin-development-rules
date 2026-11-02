@@ -91,11 +91,25 @@
     "expected_shape": "// classes/task/sync_banner.php — narrate every meaningful step for cron and manual run.\npublic function execute() {\n    mtrace('Banner sync started');\n\n    $terms = $this->client->get_terms();\n    mtrace('Fetched ' . count($terms) . ' active terms');\n\n    foreach ($terms as $term) {\n        mtrace('Syncing term ' . $term->code);\n        $sections = $this->client->get_sections($term->code);\n        mtrace('  term ' . $term->code . ': ' . count($sections) . ' sections');\n\n        foreach ($sections as $section) {\n            $this->client->sync_section($section);\n            mtrace('  synced section ' . $section->crn);\n        }\n    }\n\n    mtrace('Banner sync finished');\n}\n\n// Manual-run page: open the page first, stream task output, then offer return.\necho $OUTPUT->header();\necho html_writer::start_tag('pre', ['class' => 'task-output']);\n\\core\\task\\manager::run_from_cli($task); // Task mtrace lines appear live, as in tool_task.\necho html_writer::end_tag('pre');\necho $OUTPUT->single_button($returnurl, get_string('back'));\necho $OUTPUT->footer();"
   },
   {
+    "id": "compat-db-api-signatures",
+    "title": "Call Moodle DB Helpers With Verified Signatures",
+    "impact": "CRITICAL",
+    "input": "// get_record_select() has no $sort parameter. The 4th argument is $fields.\n$program = $DB->get_record_select('local_example_program', 'enabled = 1', null, 'id ASC', '*');",
+    "expected_shape": "$program = $DB->get_record_sql(\n    'SELECT * FROM {local_example_program} WHERE enabled = 1 ORDER BY id ASC',\n    null,\n    IGNORE_MISSING\n);\n\n// Or, when multiple rows are fine:\n$programs = $DB->get_records('local_example_program', ['enabled' => 1], 'id ASC');"
+  },
+  {
     "id": "compat-php-version-gating",
     "title": "Gate PHP Modernization By Moodle And PHP Support Matrix",
     "impact": "CRITICAL",
     "input": "enum sync_status: string {\n    case pending = 'pending';\n    case done = 'done';\n}\n\nfinal class sync_result {\n    public function __construct(\n        public readonly sync_status $status,\n    ) {}\n}",
     "expected_shape": "// First verify the target Moodle branch and supported PHP versions.\n// Then choose the most modern syntax that is actually safe for that branch.\nclass sync_result {\n    /** @var string */\n    private $status;\n\n    public function __construct(string $status) {\n        $this->status = $status;\n    }\n\n    public function get_status(): string {\n        return $this->status;\n    }\n}"
+  },
+  {
+    "id": "compat-require-legacy-symbols",
+    "title": "Load Legacy Moodle Libs Before Using Their Symbols",
+    "impact": "CRITICAL",
+    "input": "namespace local_example\\table;\n\nclass pending_table extends \\table_sql { // Class \"table_sql\" not found\n}\n\nnamespace local_example\\detector;\n\n$status = ASSIGN_SUBMISSION_STATUS_SUBMITTED;\n// Resolves as local_example\\detector\\ASSIGN_SUBMISSION_STATUS_SUBMITTED",
+    "expected_shape": "namespace local_example\\table;\n\ndefined('MOODLE_INTERNAL') || die();\n\nglobal $CFG;\nrequire_once($CFG->libdir . '/tablelib.php');\n\nclass pending_table extends \\table_sql {\n}\n\nnamespace local_example\\detector;\n\ndefined('MOODLE_INTERNAL') || die();\n\nglobal $CFG;\nrequire_once($CFG->dirroot . '/mod/assign/locallib.php');\n\n$status = \\ASSIGN_SUBMISSION_STATUS_SUBMITTED;\n$released = \\ASSIGN_MARKING_WORKFLOW_STATE_RELEASED;"
   },
   {
     "id": "compat-upgrade-path",
@@ -117,6 +131,13 @@
     "impact": "CRITICAL",
     "input": "$task->set_dayofweek('*');\n\n$records = $DB->get_records_sql(\n    'SELECT s.iprestriction FROM {external_services} s'\n);",
     "expected_shape": "// Verified against core\\task\\scheduled_task in the target branch.\n$task->set_day_of_week('*');\n\n// Fetch only columns verified in the target branch schema.\n$records = $DB->get_records('external_services', null, 'name ASC', 'id, name, enabled');"
+  },
+  {
+    "id": "data-cli-module-creation-defaults",
+    "title": "Set Explicit Defaults When Creating Activities Outside Form API",
+    "impact": "HIGH",
+    "input": "$moduleinfo = (object) [\n    'modulename' => 'assign',\n    'module' => $assignmoduleid,\n    'name' => 'Demo task',\n    'course' => $course->id,\n    'section' => 0,\n    'visible' => 1,\n    'duedate' => time() - DAYSECS,\n    'grade' => 20,\n    'markingworkflow' => 1,\n];\nadd_moduleinfo($moduleinfo, $course); // submissiondrafts / notifications / dates often NULL",
+    "expected_shape": "$moduleinfo = (object) [\n    'modulename' => 'assign',\n    'module' => $assignmoduleid,\n    'name' => 'Demo task',\n    'course' => $course->id,\n    'section' => 0,\n    'visible' => 1,\n    'intro' => '',\n    'introformat' => FORMAT_HTML,\n    'alwaysshowdescription' => 1,\n    'submissiondrafts' => 0,\n    'requiresubmissionstatement' => 0,\n    'sendnotifications' => 0,\n    'sendlatenotifications' => 0,\n    'sendstudentnotifications' => 0,\n    'allowsubmissionsfromdate' => 0,\n    'duedate' => time() - DAYSECS,\n    'cutoffdate' => time(),\n    'gradingduedate' => time() + DAYSECS,\n    'grade' => 20,\n    'teamsubmission' => 0,\n    'requireallteammemberssubmit' => 0,\n    'blindmarking' => 0,\n    'markingworkflow' => 1,\n    'markingallocation' => 0,\n    'attemptreopenmethod' => 'none',\n    'assignsubmission_onlinetext_enabled' => 1,\n];\nadd_moduleinfo($moduleinfo, $course);"
   },
   {
     "id": "data-db-api-choice",
@@ -292,6 +313,13 @@
     "impact": "HIGH",
     "input": "echo '<form method=\"post\">';\necho '<input type=\"text\" name=\"name\" />';\necho '<button type=\"submit\">Save</button>';\necho '</form>';",
     "expected_shape": "class item_form extends moodleform {\n    public function definition() {\n        $mform = $this->_form;\n        $mform->addElement('text', 'name', get_string('name', 'local_example'));\n        $mform->setType('name', PARAM_TEXT);\n        $this->add_action_buttons();\n    }\n}"
+  },
+  {
+    "id": "ui-guard-empty-timestamps",
+    "title": "Guard Empty Timestamps Before userdate And Similar Formatters",
+    "impact": "MEDIUM",
+    "input": "echo get_string('updateduntil', 'local_example', userdate((int) get_config('local_example', 'last_process_time')));",
+    "expected_shape": "$when = (int) get_config('local_example', 'last_process_time');\nif ($when <= 0) {\n    echo get_string('updateduntil_never', 'local_example');\n} else {\n    echo get_string('updateduntil', 'local_example', userdate($when));\n}"
   },
   {
     "id": "ui-moodle-url-output",

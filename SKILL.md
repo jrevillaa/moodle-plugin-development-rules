@@ -84,7 +84,9 @@ For audit, validation, modernization, or improvement requests, run a compliance 
 - Capabilities, context, sesskey, and request security
 - Admin page setup (`admin_externalpage_setup`) and visible real breadcrumbs for admin and shared pages
 - Form API, Mustache, renderers, AMD, and Moodle 5 UI/theme patterns when relevant
-- DB API choice, pagination, filtering, exports, and upgrades
+- DB API choice and verified `$DB` helper signatures, pagination, filtering, exports, and upgrades
+- Legacy lib includes and leading `\` for global constants used from namespaced classes
+- Explicit defaults for CLI/seed `add_moduleinfo` paths; empty-timestamp guards before `userdate()`
 - Upgrade self-containment plus verification of core methods and installed schema
 - Persistence flow consistency across UI/API → database → task → final state
 - External API contracts, outbound HTTP query separators, idempotency, service exposure, and token/service wiring

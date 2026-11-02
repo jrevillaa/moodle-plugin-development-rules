@@ -1,6 +1,25 @@
 # Changelog
 
-## 3.1.0 - August 2026 (development on main)
+## 3.1.1 - November 2026
+
+Patch release on the 3.1 line: general traps for DB helper misuse, legacy symbols in namespaces, CLI/seed activity defaults, and empty timestamps.
+
+Added:
+
+- `compat-db-api-signatures` — verify `$DB` helper signatures; do not invent arguments such as `$sort` on `get_record_select()`
+- `compat-require-legacy-symbols` — `require_once` legacy libs (`tablelib`, mod `locallib`) and use leading `\` for global constants from namespaced code
+- `data-cli-module-creation-defaults` — set explicit NOT NULL defaults when calling `add_moduleinfo()` outside Form API
+- `ui-guard-empty-timestamps` — guard `<= 0` before `userdate()` so “never run” does not render as 1969/1970
+
+Changed:
+
+- Anti-patterns, quick triage, and DB API choice notes now cover these traps plus plugin surrogate keys vs Moodle foreign keys
+
+### Formal rule count
+
+49 formal rules.
+
+## 3.1.0 - August 2026
 
 Added formal coverage for Site administration page setup, mandatory breadcrumbs, and narrated task progress for multi-step runs.
 

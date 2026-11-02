@@ -46,6 +46,7 @@ Why it matters:
 - Single-table simple reads are clearer with focused helper methods
 - Joins, pagination, and aggregation usually require SQL-based APIs
 - Good DB API choice improves both readability and performance
+- Helper signatures differ: `get_record_select()` has no `$sort` argument; inventing one silently breaks the SELECT list (see `compat-db-api-signatures`)
 
 Recommended remediation:
 

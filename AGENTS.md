@@ -1,8 +1,8 @@
 # Moodle Plugin Development Rules
 
-**Version 3.1.0**  
+**Version 3.1.1**  
 Independent  
-August 2026
+November 2026
 
 > **Note:**  
 > This document is generated from the individual rule files in `rules/`.  
@@ -13,7 +13,7 @@ August 2026
 
 ## Abstract
 
-Comprehensive Moodle plugin development, maintainability, and always-on release-safety guide for AI agents and reviewers. Covers Moodle-native architecture, thin entrypoints, guard clauses, spaghetti and duplication control, loop cost, file decomposition, self-contained upgrades, verified core APIs/schema, consistent queue and status workflows, capabilities, forms, admin page setup and breadcrumbs, contextual operational UI, renderers, Mustache, AMD JavaScript, DB API usage, external API contracts, outbound HTTP query-separator safety, token/service verification, idempotent delivery, events/observers, tasks with mtrace progress narration and Moodle-native manual-run output, cache invalidation, PHP compatibility, Moodle 5.x Boost/Bootstrap 5.3, privacy, files, backup/restore, legacy parity, and scenario-based testing. Agents load SKILL.md plus on-demand rules/references; AGENTS.md remains a generated full catalog, not the default runtime context. Findings are prioritized for audit workflows and completed changes pass a proportionate release gate.
+Comprehensive Moodle plugin development, maintainability, and always-on release-safety guide for AI agents and reviewers. Covers Moodle-native architecture, thin entrypoints, guard clauses, spaghetti and duplication control, loop cost, file decomposition, self-contained upgrades, verified core APIs/schema and DB helper signatures, legacy lib/constant loading from namespaces, CLI/seed module defaults, empty-timestamp UX guards, consistent queue and status workflows, capabilities, forms, admin page setup and breadcrumbs, contextual operational UI, renderers, Mustache, AMD JavaScript, DB API usage, external API contracts, outbound HTTP query-separator safety, token/service verification, idempotent delivery, events/observers, tasks with mtrace progress narration and Moodle-native manual-run output, cache invalidation, PHP compatibility, Moodle 5.x Boost/Bootstrap 5.3, privacy, files, backup/restore, legacy parity, and scenario-based testing. Agents load SKILL.md plus on-demand rules/references; AGENTS.md remains a generated full catalog, not the default runtime context. Findings are prioritized for audit workflows and completed changes pass a proportionate release gate.
 
 ---
 
@@ -32,10 +32,13 @@ Comprehensive Moodle plugin development, maintainability, and always-on release-
 - `async-events-observers.md` - Use Events And Observers For Cross-Cutting Domain Reactions
 - `async-scheduled-task.md` - Move Recurrent Heavy Work to Scheduled Tasks
 - `async-task-progress-and-manual-run.md` - Narrate Task Progress And Never Run Heavy Work As A Silent Spinner
+- `compat-db-api-signatures.md` - Call Moodle DB Helpers With Verified Signatures
 - `compat-php-version-gating.md` - Gate PHP Modernization By Moodle And PHP Support Matrix
+- `compat-require-legacy-symbols.md` - Load Legacy Moodle Libs Before Using Their Symbols
 - `compat-upgrade-path.md` - Route Persistent Changes Through Moodle Upgrades
 - `compat-upgrade-self-contained.md` - Keep Upgrade Steps Self-Contained And Stable
 - `compat-verify-core-contracts.md` - Verify Moodle APIs And Schema Before Using Them
+- `data-cli-module-creation-defaults.md` - Set Explicit Defaults When Creating Activities Outside Form API
 - `data-db-api-choice.md` - Choose the Moodle DB API Based on Query Shape
 - `data-inclusive-date-filters.md` - Translate Inclusive Calendar Dates Into Correct Timestamp Bounds
 - `data-no-queries-in-loops.md` - Do Not Run Queries Or Heavy Work Inside Loops
@@ -61,6 +64,7 @@ Comprehensive Moodle plugin development, maintainability, and always-on release-
 - `ui-admin-setup-and-breadcrumbs.md` - Set Up Admin Pages And Visible Breadcrumbs Correctly
 - `ui-contextual-guidance.md` - Explain Operational Views Filters And Icon Actions In Context
 - `ui-form-api.md` - Use Form API for Real Input Workflows
+- `ui-guard-empty-timestamps.md` - Guard Empty Timestamps Before userdate And Similar Formatters
 - `ui-moodle-url-output.md` - Use Moodle URLs and Output Helpers
 - `ui-moodle5-theme.md` - Build Moodle 5.x UI On Boost And Bootstrap 5.3
 - `ui-mustache-renderers.md` - Render Non-Trivial Views Through Mustache and Renderers
@@ -752,6 +756,51 @@ Recommended remediation:
 
 Reference: [Task API](https://moodledev.io/docs/apis/subsystems/task)
 
+### Call Moodle DB Helpers With Verified Signatures
+
+**Impact:** CRITICAL (Prevents silent wrong SQL and runtime database failures from invented helper arguments)
+
+## Call Moodle DB Helpers With Verified Signatures
+
+**Impact: CRITICAL (prevents silent wrong SQL and runtime database failures from invented helper arguments)**
+
+Before calling `$DB->get_record*`, `get_records*`, `get_fieldset*`, or similar helpers, verify the real method signature in the target Moodle branch. Do not invent a `$sort` argument, swap `$fields` with `$strictness`, or assume every helper mirrors `get_records()`.
+
+Wrong:
+
+```php
+// get_record_select() has no $sort parameter. The 4th argument is $fields.
+$program = $DB->get_record_select('local_example_program', 'enabled = 1', null, 'id ASC', '*');
+```
+
+Preferred:
+
+```php
+$program = $DB->get_record_sql(
+    'SELECT * FROM {local_example_program} WHERE enabled = 1 ORDER BY id ASC',
+    null,
+    IGNORE_MISSING
+);
+
+// Or, when multiple rows are fine:
+$programs = $DB->get_records('local_example_program', ['enabled' => 1], 'id ASC');
+```
+
+Why it matters:
+
+- A plausible “sort” argument can silently become the SELECT field list
+- Cron, CLI, and upgrade paths fail with opaque database errors
+- The bug looks like data/config when it is actually an API misuse
+
+Recommended remediation:
+
+- Open `lib/dml/moodle_database.php` (or the branch docs) and match the exact parameter order
+- Prefer `get_record_sql()` / `get_records_sql()` when you need joins or `ORDER BY`
+- Use `get_records()` / `get_record()` only when their documented filters and sort params fit
+- Smoke the exact query path in CLI/cron, not only the web UI
+
+Reference: [DML API](https://moodledev.io/docs/apis/core/dml)
+
 ### Gate PHP Modernization By Moodle And PHP Support Matrix
 
 **Impact:** CRITICAL (Prevents incompatible syntax recommendations and unsafe refactors across Moodle branches)
@@ -810,6 +859,69 @@ Recommended remediation:
 - Be especially careful with enums, `readonly`, attributes, promoted properties, union types, and newer exception or typing patterns
 
 Reference: [Moodle Developer Documentation](https://moodledev.io)
+
+### Load Legacy Moodle Libs Before Using Their Symbols
+
+**Impact:** CRITICAL (Prevents Class not found and Undefined constant failures in namespaced plugin code)
+
+## Load Legacy Moodle Libs Before Using Their Symbols
+
+**Impact: CRITICAL (prevents Class not found and Undefined constant failures in namespaced plugin code)**
+
+Many Moodle symbols are still provided by include files rather than the class autoloader: `table_sql` / `flexible_table` (`lib/tablelib.php`), activity constants such as `ASSIGN_*` (`mod/assign/locallib.php`), and similar legacy helpers. Namespaced plugin classes must `require_once` those libs before use, and must reference global constants with a leading `\`.
+
+Wrong:
+
+```php
+namespace local_example\table;
+
+class pending_table extends \table_sql { // Class "table_sql" not found
+}
+
+namespace local_example\detector;
+
+$status = ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+// Resolves as local_example\detector\ASSIGN_SUBMISSION_STATUS_SUBMITTED
+```
+
+Preferred:
+
+```php
+namespace local_example\table;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->libdir . '/tablelib.php');
+
+class pending_table extends \table_sql {
+}
+
+namespace local_example\detector;
+
+defined('MOODLE_INTERNAL') || die();
+
+global $CFG;
+require_once($CFG->dirroot . '/mod/assign/locallib.php');
+
+$status = \ASSIGN_SUBMISSION_STATUS_SUBMITTED;
+$released = \ASSIGN_MARKING_WORKFLOW_STATE_RELEASED;
+```
+
+Why it matters:
+
+- Autoload covers many modern classes, but not every historical Moodle symbol
+- Inside a namespace, bare constants are looked up locally first
+- Failures often appear only on the page or cron path that first hits the class
+
+Recommended remediation:
+
+- Require the owning lib next to the first use of the symbol
+- Prefer leading `\` for global constants and class aliases from includes
+- Mirror how core callers include the same lib in the target Moodle branch
+- Cover the failing page/task in a smoke path after the fix
+
+Reference: [Coding style](https://moodledev.io/general/development/policies/codingstyle)
 
 ### Route Persistent Changes Through Moodle Upgrades
 
@@ -958,6 +1070,83 @@ Recommended remediation:
 
 Reference: [Moodle Developer Documentation](https://moodledev.io)
 
+### Set Explicit Defaults When Creating Activities Outside Form API
+
+**Impact:** HIGH (Prevents NOT NULL insert failures when add_moduleinfo runs from CLI or seed scripts)
+
+## Set Explicit Defaults When Creating Activities Outside Form API
+
+**Impact: HIGH (prevents NOT NULL insert failures when add_moduleinfo runs from CLI or seed scripts)**
+
+`add_moduleinfo()` and related module factories do not reliably apply the defaults that the browser Form API would. In CLI seeds, generators, and repair scripts—especially under MySQL strict mode—unset fields become SQL `NULL` and fail columns defined as `NOT NULL` without a DB default.
+
+Wrong:
+
+```php
+$moduleinfo = (object) [
+    'modulename' => 'assign',
+    'module' => $assignmoduleid,
+    'name' => 'Demo task',
+    'course' => $course->id,
+    'section' => 0,
+    'visible' => 1,
+    'duedate' => time() - DAYSECS,
+    'grade' => 20,
+    'markingworkflow' => 1,
+];
+add_moduleinfo($moduleinfo, $course); // submissiondrafts / notifications / dates often NULL
+```
+
+Preferred:
+
+```php
+$moduleinfo = (object) [
+    'modulename' => 'assign',
+    'module' => $assignmoduleid,
+    'name' => 'Demo task',
+    'course' => $course->id,
+    'section' => 0,
+    'visible' => 1,
+    'intro' => '',
+    'introformat' => FORMAT_HTML,
+    'alwaysshowdescription' => 1,
+    'submissiondrafts' => 0,
+    'requiresubmissionstatement' => 0,
+    'sendnotifications' => 0,
+    'sendlatenotifications' => 0,
+    'sendstudentnotifications' => 0,
+    'allowsubmissionsfromdate' => 0,
+    'duedate' => time() - DAYSECS,
+    'cutoffdate' => time(),
+    'gradingduedate' => time() + DAYSECS,
+    'grade' => 20,
+    'teamsubmission' => 0,
+    'requireallteammemberssubmit' => 0,
+    'blindmarking' => 0,
+    'markingworkflow' => 1,
+    'markingallocation' => 0,
+    'attemptreopenmethod' => 'none',
+    'assignsubmission_onlinetext_enabled' => 1,
+];
+add_moduleinfo($moduleinfo, $course);
+```
+
+Why it matters:
+
+- Web defaults come from forms and editors, not from `add_moduleinfo` alone
+- Strict SQL modes turn missing defaults into hard insert errors mid-seed
+- Partial seeds leave courses half-created and confuse later cron/demo runs
+
+Recommended remediation:
+
+- Inspect the module `install.xml` / form defaults for `NOT NULL` fields before writing seed code
+- Set every required scalar explicitly (`0`, `''`, `'none'`, `FORMAT_HTML`, …)
+- For `feedback`, include text/editor fields such as `page_after_submit` / format; for `quiz`, set behaviour and attempt defaults
+- Catch `dml_exception` in CLI seeds and print `$e->debuginfo` so the next missing column is obvious
+- Make seeds idempotent: reuse existing courses/modules instead of recreating on every failure
+
+Reference: [Activity modules](https://moodledev.io/docs/apis/plugintypes/mod)
+
 ### Choose the Moodle DB API Based on Query Shape
 
 **Impact:** HIGH (Improves correctness, readability, and scalability of data access)
@@ -1003,6 +1192,7 @@ Why it matters:
 - Single-table simple reads are clearer with focused helper methods
 - Joins, pagination, and aggregation usually require SQL-based APIs
 - Good DB API choice improves both readability and performance
+- Helper signatures differ: `get_record_select()` has no `$sort` argument; inventing one silently breaks the SELECT list (see `compat-db-api-signatures`)
 
 Recommended remediation:
 
@@ -2228,6 +2418,47 @@ Recommended remediation:
 - Handle submitted data through the form object
 
 Reference: [Form API](https://moodledev.io/docs/apis/subsystems/form)
+
+### Guard Empty Timestamps Before userdate And Similar Formatters
+
+**Impact:** MEDIUM (Prevents epoch dates such as 1969/1970 from appearing when a process has never run)
+
+## Guard Empty Timestamps Before userdate And Similar Formatters
+
+**Impact: MEDIUM (prevents epoch dates such as 1969/1970 from appearing when a process has never run)**
+
+Config values, nullable DB columns, and “last run” fields are often `0` or empty before the first successful process. Passing them straight into `userdate()` renders the Unix epoch in the user timezone and looks like corrupt data.
+
+Wrong:
+
+```php
+echo get_string('updateduntil', 'local_example', userdate((int) get_config('local_example', 'last_process_time')));
+```
+
+Preferred:
+
+```php
+$when = (int) get_config('local_example', 'last_process_time');
+if ($when <= 0) {
+    echo get_string('updateduntil_never', 'local_example');
+} else {
+    echo get_string('updateduntil', 'local_example', userdate($when));
+}
+```
+
+Why it matters:
+
+- Operators misread “Dec 1969 / Jan 1970” as a timezone or DB bug
+- Empty-state UX should say the job has not run yet
+- The same trap applies to exports, emails, and dashboards
+
+Recommended remediation:
+
+- Treat `<= 0` (or `null`) as “never” for process/run timestamps
+- Add a dedicated language string for the empty state
+- Apply the same guard to CSV/Excel columns that format dates
+
+Reference: [String API](https://moodledev.io/docs/apis/subsystems/string)
 
 ### Use Moodle URLs and Output Helpers
 

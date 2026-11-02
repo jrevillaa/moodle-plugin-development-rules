@@ -1,6 +1,6 @@
 # Rules Index
 
-Generated catalog of 45 formal rules for version 3.1.0.
+Generated catalog of 49 formal rules for version 3.1.1.
 
 Use this index to choose the relevant rule file, then read only that file under `rules/`.
 Do not load `AGENTS.md` by default.
@@ -29,13 +29,16 @@ Do not load `AGENTS.md` by default.
 
 ## `compat-`
 
+- [`compat-db-api-signatures.md`](../rules/compat-db-api-signatures.md) — **Call Moodle DB Helpers With Verified Signatures** (CRITICAL — Prevents silent wrong SQL and runtime database failures from invented helper arguments)
 - [`compat-php-version-gating.md`](../rules/compat-php-version-gating.md) — **Gate PHP Modernization By Moodle And PHP Support Matrix** (CRITICAL — Prevents incompatible syntax recommendations and unsafe refactors across Moodle branches)
+- [`compat-require-legacy-symbols.md`](../rules/compat-require-legacy-symbols.md) — **Load Legacy Moodle Libs Before Using Their Symbols** (CRITICAL — Prevents Class not found and Undefined constant failures in namespaced plugin code)
 - [`compat-upgrade-path.md`](../rules/compat-upgrade-path.md) — **Route Persistent Changes Through Moodle Upgrades** (CRITICAL — Prevents broken deployments and inconsistent schema state)
 - [`compat-upgrade-self-contained.md`](../rules/compat-upgrade-self-contained.md) — **Keep Upgrade Steps Self-Contained And Stable** (CRITICAL — Prevents upgrade failures caused by unavailable or evolving plugin classes)
 - [`compat-verify-core-contracts.md`](../rules/compat-verify-core-contracts.md) — **Verify Moodle APIs And Schema Before Using Them** (CRITICAL — Prevents release failures caused by invented methods, fields, or version assumptions)
 
 ## `data-`
 
+- [`data-cli-module-creation-defaults.md`](../rules/data-cli-module-creation-defaults.md) — **Set Explicit Defaults When Creating Activities Outside Form API** (HIGH — Prevents NOT NULL insert failures when add_moduleinfo runs from CLI or seed scripts)
 - [`data-db-api-choice.md`](../rules/data-db-api-choice.md) — **Choose the Moodle DB API Based on Query Shape** (HIGH — Improves correctness, readability, and scalability of data access)
 - [`data-inclusive-date-filters.md`](../rules/data-inclusive-date-filters.md) — **Translate Inclusive Calendar Dates Into Correct Timestamp Bounds** (MEDIUM — Prevents date filters from silently excluding most of the final day)
 - [`data-no-queries-in-loops.md`](../rules/data-no-queries-in-loops.md) — **Do Not Run Queries Or Heavy Work Inside Loops** (HIGH — Prevents per-row query storms and unbounded loop cost on real Moodle data)
@@ -76,6 +79,7 @@ Do not load `AGENTS.md` by default.
 - [`ui-admin-setup-and-breadcrumbs.md`](../rules/ui-admin-setup-and-breadcrumbs.md) — **Set Up Admin Pages And Visible Breadcrumbs Correctly** (HIGH — Keeps Site administration navigation working and always orients users with a real breadcrumb path)
 - [`ui-contextual-guidance.md`](../rules/ui-contextual-guidance.md) — **Explain Operational Views Filters And Icon Actions In Context** (MEDIUM — Prevents users from guessing what a view, field, or compact action actually does)
 - [`ui-form-api.md`](../rules/ui-form-api.md) — **Use Form API for Real Input Workflows** (HIGH — Improves validation, maintainability, and Moodle-native behavior)
+- [`ui-guard-empty-timestamps.md`](../rules/ui-guard-empty-timestamps.md) — **Guard Empty Timestamps Before userdate And Similar Formatters** (MEDIUM — Prevents epoch dates such as 1969/1970 from appearing when a process has never run)
 - [`ui-moodle-url-output.md`](../rules/ui-moodle-url-output.md) — **Use Moodle URLs and Output Helpers** (MEDIUM — Improves output safety and keeps navigation code Moodle-native)
 - [`ui-moodle5-theme.md`](../rules/ui-moodle5-theme.md) — **Build Moodle 5.x UI On Boost And Bootstrap 5.3** (HIGH — Keeps theme and frontend work compatible with Moodle 5.x rendering and styling expectations)
 - [`ui-mustache-renderers.md`](../rules/ui-mustache-renderers.md) — **Render Non-Trivial Views Through Mustache and Renderers** (HIGH — Improves separation of concerns and Moodle-native UI structure)

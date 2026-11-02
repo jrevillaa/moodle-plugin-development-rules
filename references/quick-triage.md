@@ -12,6 +12,8 @@ Use this file to classify findings quickly during audit work.
 - Persistent changes bypassing upgrade flow
 - Upgrade step depending on a class from the same plugin
 - Invented/unverified core method that can block upgrade or runtime
+- Invented `$DB` helper arguments (for example a fake `$sort` on `get_record_select`)
+- Legacy Moodle symbols used without `require_once` / leading `\` from a namespace
 - Outbound HTTP URLs built with Moodle's HTML `&amp;` query separator
 - External API exposing sensitive operations without proper checks
 
@@ -39,6 +41,8 @@ Use this file to classify findings quickly during audit work.
 - Fat page entrypoints mixing params, queries, mutation, and markup
 - New flags or special-case branches scattered through shared flows
 - Admin custom pages missing `admin_externalpage_setup()` or shared pages without visible real breadcrumbs
+- CLI / seed `add_moduleinfo` paths that omit NOT NULL module defaults
+- Plugin surrogate keys used as if they were Moodle course/user/cm ids
 
 ## Usually Minor
 
@@ -51,6 +55,8 @@ Use this file to classify findings quickly during audit work.
 - Ambiguous field meaning or icon action that needs concise contextual help
 - Deep conditional nesting that guard clauses would flatten
 - A file approaching an unhealthy size without immediate risk
+- Empty timestamps passed to `userdate()` that render the Unix epoch
+
 ## Escalation Rule
 
 If a finding affects security, privacy, data integrity, production compatibility, or deployment safety, bias toward `Critical`.
